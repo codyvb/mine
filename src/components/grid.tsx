@@ -310,12 +310,16 @@ const MinesGame: React.FC = () => {
         updatedGrid[index].isAnimating = false;
         setGrid([...updatedGrid]);
         
-        // Show mine explosion modal
-        setModalIsWin(false);
-        setModalOpen(true);
+        // Set game over state
+        setGameOver(true);
+        setBalance(prev => prev - WAGER_AMOUNT);
+        setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
         
         // Then reveal other mines with delay
         const otherMines = minePositions.filter(pos => pos !== index);
+        
+        // Calculate when all animations will be complete
+        const totalAnimationTime = otherMines.length * 300;
         
         otherMines.forEach((pos, i) => {
           setTimeout(() => {
@@ -327,11 +331,12 @@ const MinesGame: React.FC = () => {
           }, (i + 1) * 300); // Start after a delay from the first mine
         });
         
-        setGameOver(true);
-        setBalance(prev => prev - WAGER_AMOUNT);
-        setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
+        // Show mine explosion modal AFTER all animations complete
+        setTimeout(() => {
+          setModalIsWin(false);
+          setModalOpen(true);
+        }, totalAnimationTime + 500); // Add extra buffer time after all explosions
         
-        // No automatic timer to restart the game - modal controls will handle this
       } else {
         // Play safe sound
         playSound('click');
