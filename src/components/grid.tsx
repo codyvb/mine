@@ -317,13 +317,8 @@ const MinesGame: React.FC = () => {
         setBalance(prev => prev - WAGER_AMOUNT);
         setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
         
-        // Show modal after a short delay
-        setTimeout(() => {
-          setModalIsWin(false);
-          setModalOpen(true);
-          // Clear processing tiles when game is over
-          processingTilesRef.current.clear();
-        }, 1000);
+        // Clear the processing list
+        processingTilesRef.current.clear();
       } else {
         // Safe tile
         playSound('click');
@@ -488,7 +483,7 @@ const MinesGame: React.FC = () => {
                       ? { 
                           scale: [1, 1.1, 0.95, 1], 
                           rotate: [0, 15, -15, 0], 
-                          borderRadius: ["100%", "100%", "100%", "100%"] 
+                          borderRadius: "rounded-md" 
                         }
                       : undefined
                   }
@@ -514,6 +509,15 @@ const MinesGame: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 Collect ({potentialWinnings} credits)
+              </motion.button>
+            ) : gameOver ? (
+              <motion.button
+                className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
+                onClick={startNewRound}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Try Again (5 tries left)
               </motion.button>
             ) : (
               <button
