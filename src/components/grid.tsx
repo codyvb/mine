@@ -483,7 +483,7 @@ const MinesGame: React.FC = () => {
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
         <div className="bg-black flex items-center h-full justify-center py-4">
-          <h1 className="text-2xl font-mono text-center">Select a Tile</h1>
+          <h1 className="text-2xl font-mono text-center">find some gems</h1>
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
@@ -534,14 +534,14 @@ const MinesGame: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Cash Out ({potentialWinnings} credits)
+                Collect ({potentialWinnings} credits)
               </motion.button>
             ) : (
               <button
                 className="bg-gray-600 py-6 px-6 rounded-lg font-bold w-full mx-auto block opacity-70 cursor-not-allowed text-center"
                 disabled
               >
-                <i>Select a tile to begin</i>
+                <i>Select to begin</i>
               </button>
             )}
           </div>
