@@ -1,13 +1,10 @@
-"use client";
+// src/app/page.tsx
+import MinesGame from '../components/grid';
 
-import dynamic from "next/dynamic";
-
-const Demo = dynamic(() => import("~/components/Demo"), {
-  ssr: false,
-});
-
-export default function App(
-  { title }: { title?: string } = { title: "Frames v2 Demo" }
-) {
-  return <Demo title={title} />;
+export default function Home() {
+  return (
+    <div className="min-h-screen">
+      <MinesGame />
+    </div>
+  );
 }
