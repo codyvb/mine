@@ -1133,3 +1133,4 @@ We've build a simple v2 frame by:
 5. Connecting to the user's wallet using Wagmi and `sdk.wallet.ethProvider`
 
 Happy Framesgiving! 🖼️🦃
+# mine
