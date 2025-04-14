@@ -1,0 +1,18 @@
+{
+    "accountAssociation": {
+      "header": "eyJmaWQiOjc0NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDM3NUMxZEU1Nzk1MTRkOTBEYTcwMjc1MDdFMkM0N0M5MzkzMUQxQjcifQ",
+      "payload": "eyJkb21haW4iOiJtaW5pLnNpZGVxdWVzdC5idWlsZCJ9",
+      "signature": "MHhjYTgxMWY4NjA4MzhkYTk1NmMzYzE2M2YxZmQwOTY5MzI3Mjk4N2U4ZmYyMTUzYzJmMDFiMjZiYzRlOWY1N2I3MjM5ZWY5MjJhNjQ1MjlhZTMxMjQ5MmYyOTc3ZjU0NmE5NmMwMzA3MGQ4NDBhZmY2MzdjMDg2MWU3ZjA3ZmYzMzFi"
+    },
+    "frame": {
+      "version": "1",
+      "name": "Grid",
+      "iconUrl": "https://www.sidequest.build/fox.png",
+      "imageUrl": "https://www.sidequest.build/card.png",
+      "buttonTitle": "Launch",
+      "splashImageUrl": "https://www.sidequest.build/fox.png",
+      "splashBackgroundColor": "#000000",
+      "webhookUrl": "https://mine-new-world.vercel.app/webhook",
+      "homeUrl": "https://mine-new-world.vercel.app/"
+    }
+  }
