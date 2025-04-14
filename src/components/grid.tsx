@@ -14,6 +14,8 @@ interface Tile {
 }
 
 const MinesGame: React.FC = () => {
+  // Keep track of tiles currently being processed to prevent race conditions
+  const processingTilesRef = useRef<Set<number>>(new Set());
   // Game constants
   const GRID_SIZE = 5;
   const MINE_COUNT = 3;
@@ -283,8 +285,11 @@ const MinesGame: React.FC = () => {
     // Try to init audio on every interaction
     initAudio();
     
-    // Prevent clicks if game is over or tile is already revealed
-    if (gameOver || revealedPositions.includes(index)) return;
+    // Prevent clicks if game is over, tile is already revealed, or is currently being processed
+    if (gameOver || revealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
+    
+    // Mark this tile as being processed to prevent multiple rapid clicks
+    processingTilesRef.current.add(index);
     
     const tile = grid[index];
     
@@ -316,28 +321,36 @@ const MinesGame: React.FC = () => {
         setTimeout(() => {
           setModalIsWin(false);
           setModalOpen(true);
+          // Clear processing tiles when game is over
+          processingTilesRef.current.clear();
         }, 1000);
       } else {
         // Safe tile
         playSound('click');
         
         // Add to revealed positions in a single step
-        const newRevealedPositions = [...revealedPositions, index];
-        setRevealedPositions(newRevealedPositions);
-        
-        // Calculate potential winnings
-        const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
-        setPotentialWinnings(newPotentialWinnings);
-        
-        // Enable cash out
-        setCanCashOut(true);
-        
-        setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
-        
-        // Check if all safe tiles are revealed (win condition)
-        if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
-          handleCashOut();
-        }
+        setRevealedPositions(prev => {
+          const newRevealedPositions = [...prev, index];
+          
+          // Calculate potential winnings
+          const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
+          setPotentialWinnings(newPotentialWinnings);
+          
+          // Enable cash out
+          setCanCashOut(true);
+          
+          setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
+          
+          // Check if all safe tiles are revealed (win condition)
+          if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
+            handleCashOut();
+          }
+          
+          // Remove this tile from processing list
+          processingTilesRef.current.delete(index);
+          
+          return newRevealedPositions;
+        });
       }
     }, ANIMATION_DURATION);
   };
@@ -472,7 +485,11 @@ const MinesGame: React.FC = () => {
                   }}
                   animate={
                     tile.isAnimating
-                      ? { scale: [1, 1.1, 0.95, 1], rotate: [0, 5, -5, 0] }
+                      ? { 
+                          scale: [1, 1.1, 0.95, 1], 
+                          rotate: [0, 15, -15, 0], 
+                          borderRadius: ["100%", "100%", "100%", "100%"] 
+                        }
                       : undefined
                   }
                   transition={{ duration: 0.4 }}
