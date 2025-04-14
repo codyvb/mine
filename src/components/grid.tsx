@@ -19,7 +19,7 @@ const MinesGame: React.FC = () => {
   const MINE_COUNT = 3;
   const INITIAL_BALANCE = 1000;
   const WAGER_AMOUNT = 10;
-  const ANIMATION_DURATION = 400; // ms - shortened for more responsiveness
+  const ANIMATION_DURATION = 400;
   
   // Game state
   const [balance, setBalance] = useState(INITIAL_BALANCE);
@@ -37,6 +37,9 @@ const MinesGame: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIsWin, setModalIsWin] = useState(false);
   const [modalWinAmount, setModalWinAmount] = useState(0);
+  
+  // Keep track of the clicked mine index
+  const [clickedMineIndex, setClickedMineIndex] = useState<number | null>(null);
   
   // Audio state with refs to avoid re-renders
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -103,7 +106,6 @@ const MinesGame: React.FC = () => {
     // Configure based on sound type
     switch (type) {
       case 'click':
-        // Higher pitched click
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(880, ctx.currentTime);
         gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
@@ -113,7 +115,6 @@ const MinesGame: React.FC = () => {
         break;
         
       case 'mine':
-        // Explosive sound
         oscillator.type = 'sawtooth';
         oscillator.frequency.setValueAtTime(110, ctx.currentTime);
         oscillator.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.2);
@@ -140,7 +141,6 @@ const MinesGame: React.FC = () => {
         break;
         
       case 'cash':
-        // Cash register sound
         oscillator.type = 'triangle';
         oscillator.frequency.setValueAtTime(1320, ctx.currentTime);
         gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
@@ -262,6 +262,7 @@ const MinesGame: React.FC = () => {
     setPotentialWinnings(0);
     setCanCashOut(false);
     setMessage('Click on tiles to reveal them!');
+    setClickedMineIndex(null);
     
     // Increment the key to force re-render
     setGameKey(prevKey => prevKey + 1);
@@ -303,13 +304,13 @@ const MinesGame: React.FC = () => {
         // Hit a mine
         playSound('mine');
         
+        // Record which mine was clicked
+        setClickedMineIndex(index);
+        
         // Set game over
         setGameOver(true);
         setBalance(prev => prev - WAGER_AMOUNT);
         setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
-        
-        // Add clicked mine to revealed positions
-        setRevealedPositions([...revealedPositions, index]);
         
         // Show modal after a short delay
         setTimeout(() => {
@@ -415,24 +416,56 @@ const MinesGame: React.FC = () => {
         <div className="flex items-center justify-center px-4 py-2 flex-grow">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
-              // Determine tile appearance
-              const isMineRevealed = tile.isMine && (gameOver || revealedPositions.includes(index));
-              const isRevealed = revealedPositions.includes(index) || tile.isRevealed;
-              const opacity = gameOver && !revealedPositions.includes(index) ? 0.3 : 1;
+              // Determine if this tile is:
+              // 1. The clicked mine
+              const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
+              
+              // 2. Another mine that should be shown at reduced opacity when game is over
+              const isOtherMine = tile.isMine && gameOver && index !== clickedMineIndex;
+              
+              // 3. A safe tile that was clicked before game over
+              const isSafeTileRevealed = revealedPositions.includes(index);
+              
+              // 4. A regular unrevealed tile
+              const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
+              
+              // Set opacity for different scenarios
+              let opacity = 1; // Default full opacity
+              
+              if (gameOver) {
+                if (isClickedMine || isSafeTileRevealed) {
+                  // Full opacity for clicked mine and previously revealed safe tiles
+                  opacity = 1;
+                } else {
+                  // Reduced opacity for other mines and unrevealed tiles
+                  opacity = 0.3;
+                }
+              }
+              
+              // Determine the tile color
+              let tileClassName = 'aspect-square rounded-md flex items-center justify-center text-lg font-bold border-2 transition-colors';
+              
+              if (isClickedMine) {
+                // Clicked mine shows as red
+                tileClassName += ' bg-red-500 border-red-700';
+              } else if (isOtherMine && gameOver) {
+                // Other mines also show as red when game is over
+                tileClassName += ' bg-red-500 border-red-700';
+              } else if (isSafeTileRevealed) {
+                // Revealed safe tile shows as green
+                tileClassName += ' bg-green-500 border-green-600';
+              } else {
+                // Unrevealed tiles are gray
+                tileClassName += ' bg-gray-700 hover:bg-gray-600 border-gray-600';
+              }
               
               return (
                 <motion.button
                   key={`${gameKey}-${index}`}
-                  className={`aspect-square rounded-md flex items-center justify-center text-lg font-bold 
-                    ${isMineRevealed
-                      ? 'bg-red-500 border-red-700' 
-                      : isRevealed
-                        ? 'bg-green-500 border-green-600' 
-                        : 'bg-gray-700 hover:bg-gray-600 border-gray-600'} 
-                    border-2 transition-colors`}
+                  className={tileClassName}
                   onClick={() => handleTileClick(index)}
-                  whileHover={!gameOver && !isRevealed ? { scale: 1.05 } : undefined}
-                  whileTap={!gameOver && !isRevealed ? { scale: 0.95 } : undefined}
+                  whileHover={!gameOver && !isSafeTileRevealed ? { scale: 1.05 } : undefined}
+                  whileTap={!gameOver && !isSafeTileRevealed ? { scale: 0.95 } : undefined}
                   style={{ 
                     touchAction: 'none',
                     opacity: opacity
@@ -445,7 +478,7 @@ const MinesGame: React.FC = () => {
                   transition={{ duration: 0.4 }}
                 >
                   {/* Show appropriate icon based on state */}
-                  {isMineRevealed ? '💣' : isRevealed ? '✓' : ''}
+                  {(isClickedMine || isOtherMine) ? '💣' : isSafeTileRevealed ? '✓' : ''}
                 </motion.button>
               );
             })}
