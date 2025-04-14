@@ -11,6 +11,7 @@ interface Tile {
   isMine: boolean;
   isRevealed: boolean;
   isAnimating: boolean;
+  showCheckmark?: boolean;
 }
 
 const MinesGame: React.FC = () => {
@@ -281,6 +282,60 @@ const MinesGame: React.FC = () => {
     return Math.floor(WAGER_AMOUNT * multiplier);
   };
   
+  // Reveal the entire board (used after hitting a mine)
+  const revealEntireBoard = (clickedMineIndex: number): void => {
+    const updatedGrid = [...grid];
+    
+    // First, reveal the clicked mine with animation
+    updatedGrid[clickedMineIndex].isRevealed = true;
+    updatedGrid[clickedMineIndex].isAnimating = false;
+    
+    // Reveal all other mines with sequential delay and animations
+    const otherMines = minePositions.filter(pos => pos !== clickedMineIndex);
+    
+    // Calculate total animation time for all mines
+    const totalMineAnimationTime = otherMines.length * 300;
+    
+    otherMines.forEach((pos, i) => {
+      setTimeout(() => {
+        updatedGrid[pos].isRevealed = true;
+        setGrid([...updatedGrid]);
+        
+        // Play another explosion for each mine
+        playSound('mine');
+      }, (i + 1) * 300);
+    });
+    
+    // Add checkmarks to all safe tiles but DO NOT mark them as revealed
+    // This prevents them from changing color but still shows the checkmark
+    setTimeout(() => {
+      // Create a special grid state for end game display
+      const finalGrid = updatedGrid.map((tile, i) => {
+        // For mines - they're already properly handled
+        if (minePositions.includes(i)) {
+          return tile;
+        }
+        
+        // For tiles already revealed by player - keep them green
+        if (revealedPositions.includes(i)) {
+          return {...tile, isRevealed: true};
+        }
+        
+        // For unclicked safe tiles - DO NOT mark as revealed to keep neutral color
+        // but store that they should show a checkmark in a new property
+        return {...tile, showCheckmark: true};
+      });
+      
+      setGrid(finalGrid);
+    }, totalMineAnimationTime);
+    
+    // Show modal after all animations complete (with extra delay)
+    setTimeout(() => {
+      setModalIsWin(false);
+      setModalOpen(true);
+    }, totalMineAnimationTime + 1500); // Added 1 second (1000ms) for a total of 1.5s delay
+  };
+  
   // Handle tile click
   const handleTileClick = (index: number): void => {
     // Try to init audio on every interaction
@@ -302,42 +357,23 @@ const MinesGame: React.FC = () => {
         // Play mine sound
         playSound('mine');
         
-        // Hit a mine - game over
-        const updatedGrid = [...newGrid];
-        
-        // First reveal the clicked mine
-        updatedGrid[index].isRevealed = true;
-        updatedGrid[index].isAnimating = false;
-        setGrid([...updatedGrid]);
-        
         // Set game over state
         setGameOver(true);
         setBalance(prev => prev - WAGER_AMOUNT);
         setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
         
-        // Then reveal other mines with delay
-        const otherMines = minePositions.filter(pos => pos !== index);
+        // Stop any pending animations on previously selected tiles
+        const updatedGrid = [...newGrid].map(tile => ({
+          ...tile,
+          isAnimating: false
+        }));
+        setGrid(updatedGrid);
         
-        // Calculate when all animations will be complete
-        const totalAnimationTime = otherMines.length * 300;
-        
-        otherMines.forEach((pos, i) => {
-          setTimeout(() => {
-            updatedGrid[pos].isRevealed = true;
-            setGrid([...updatedGrid]);
-            
-            // Play another explosion for each mine
-            playSound('mine');
-          }, (i + 1) * 300); // Start after a delay from the first mine
-        });
-        
-        // Show mine explosion modal AFTER all animations complete
-        setTimeout(() => {
-          setModalIsWin(false);
-          setModalOpen(true);
-        }, totalAnimationTime + 500); // Add extra buffer time after all explosions
+        // Reveal the entire board with the clicked mine highlighted first
+        revealEntireBoard(index);
         
       } else {
+        // Safe tile
         // Play safe sound
         playSound('click');
         
@@ -345,29 +381,32 @@ const MinesGame: React.FC = () => {
         const newRevealedPositions = [...revealedPositions, index];
         const updatedGrid = [...newGrid];
         
-        // Update the tile state to be both animating and revealed
-        // We'll show the checkmark after another delay
+        // First immediately show the checkmark after animation but keep the tile gray
         setTimeout(() => {
           updatedGrid[index].isRevealed = true;
           updatedGrid[index].isAnimating = false;
+          // Don't add to revealedPositions yet to keep it gray with checkmark
           setGrid([...updatedGrid]);
+          
+          // Then after a short delay, turn it green by adding to revealedPositions
+          setTimeout(() => {
+            setRevealedPositions(newRevealedPositions);
+            
+            // Calculate potential winnings
+            const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
+            setPotentialWinnings(newPotentialWinnings);
+            
+            // Enable cash out after at least one safe tile is revealed
+            setCanCashOut(true);
+            
+            setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
+            
+            // Check if all safe tiles are revealed (win condition)
+            if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
+              handleCashOut();
+            }
+          }, 300); // Delay before turning green
         }, REVEAL_DELAY);
-        
-        setRevealedPositions(newRevealedPositions);
-        
-        // Calculate potential winnings
-        const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
-        setPotentialWinnings(newPotentialWinnings);
-        
-        // Enable cash out after at least one safe tile is revealed
-        setCanCashOut(true);
-        
-        setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
-        
-        // Check if all safe tiles are revealed (win condition)
-        if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
-          handleCashOut();
-        }
       }
     }, ANIMATION_DURATION);
   };
@@ -454,10 +493,10 @@ const MinesGame: React.FC = () => {
               <motion.button
                 key={`${gameKey}-${index}`}
                 className={`aspect-square rounded-md flex items-center justify-center text-lg font-bold 
-                  ${tile.isRevealed && tile.isMine 
+                  ${tile.isMine && tile.isRevealed
                     ? 'bg-red-500 border-red-700' 
-                    : tile.isRevealed 
-                      ? 'bg-green-500 border-green-700' 
+                    : revealedPositions.includes(tile.id)
+                      ? 'bg-green-500 border-green-600' 
                       : 'bg-gray-700 hover:bg-gray-600 border-gray-600'} 
                   border-2 transition-colors`}
                 onClick={() => handleTileClick(index)}
@@ -472,13 +511,13 @@ const MinesGame: React.FC = () => {
                         ? { scale: [1, 1.2, 0.9, 1.1, 1], rotate: [0, -10, 10, -5, 0] }
                         : { 
                           scale: [1, 1.2, 1], 
-                          backgroundColor: ["#1F2937", "#10B981", "#10B981"] as any
+                          backgroundColor: ["#1F2937", "#22C55E", "#22C55E"] as any // This is green-500 in hex
                         })
                       : undefined
                 }
                 transition={{ duration: 0.5 }}
               >
-                {tile.isRevealed && (tile.isMine ? '💣' : '✓')}
+                {(tile.isRevealed || tile.showCheckmark) && (tile.isMine ? '💣' : '✓')}
               </motion.button>
             ))}
           </div>
@@ -490,7 +529,7 @@ const MinesGame: React.FC = () => {
           <div className="mb-3">
             {canCashOut && !gameOver ? (
               <motion.button
-                className="bg-green-600 hover:bg-green-700 py-3 px-6 rounded-lg font-bold transition-colors w-full  mx-auto block text-center"
+                className="bg-green-500 hover:bg-green-600 py-3 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
                 onClick={handleCashOut}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -510,21 +549,21 @@ const MinesGame: React.FC = () => {
           {/* Navigation buttons */}
           <div className="flex gap-2 w-full mb-3 mx-auto">
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-2 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
               onClick={handleButton1Click}
             >
               home
             </button>
             
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-2 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
               onClick={handleButton3Click}
             >
               leaderboard
             </button>
             
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-2 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
               onClick={handleButton4Click}
             >
               prizes
