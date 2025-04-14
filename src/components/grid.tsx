@@ -333,7 +333,7 @@ const MinesGame: React.FC = () => {
     setTimeout(() => {
       setModalIsWin(false);
       setModalOpen(true);
-    }, totalMineAnimationTime + 1500); // Added 1 second (1000ms) for a total of 1.5s delay
+    }, totalMineAnimationTime + 1000); // Added 1 second (1000ms) for a total of 1.5s delay
   };
   
   // Handle tile click
@@ -529,7 +529,7 @@ const MinesGame: React.FC = () => {
           <div className="mb-3">
             {canCashOut && !gameOver ? (
               <motion.button
-                className="bg-green-500 hover:bg-green-600 py-3 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
+                className="bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
                 onClick={handleCashOut}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -538,7 +538,7 @@ const MinesGame: React.FC = () => {
               </motion.button>
             ) : (
               <button
-                className="bg-gray-600 py-3 px-6 rounded-lg font-bold w-full mx-auto block opacity-70 cursor-not-allowed text-center"
+                className="bg-gray-600 py-6 px-6 rounded-lg font-bold w-full mx-auto block opacity-70 cursor-not-allowed text-center"
                 disabled
               >
                 <i>Select a tile to begin</i>
@@ -549,21 +549,21 @@ const MinesGame: React.FC = () => {
           {/* Navigation buttons */}
           <div className="flex gap-2 w-full mb-3 mx-auto">
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
               onClick={handleButton1Click}
             >
               home
             </button>
             
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
               onClick={handleButton3Click}
             >
               leaderboard
             </button>
             
             <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-6 rounded-lg transition-colors text-sm"
+              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
               onClick={handleButton4Click}
             >
               prizes
