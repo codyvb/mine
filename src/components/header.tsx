@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { User, X, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { User, X, ExternalLink } from "lucide-react";
 import sdk from "@farcaster/frame-sdk";
 
 interface HeaderProps {
@@ -22,7 +22,10 @@ const Header = ({ tries = 5 }: HeaderProps) => {
       try {
         setIsLoading(true);
         const context = await sdk.context;
-        
+
+        // Mark the frame as ready
+        sdk.actions.ready({});
+
         if (context?.user) {
           setUsername(context.user.username || null);
           setDisplayName(context.user.displayName || null);
@@ -40,7 +43,22 @@ const Header = ({ tries = 5 }: HeaderProps) => {
       }
     };
 
+    const handleFrameAdded = ({ notificationDetails }: { notificationDetails?: any }) => {
+      console.log("Frame added to client", notificationDetails);
+    };
+
+    const handleFrameRemoved = () => {
+      console.log("Frame removed from client");
+    };
+
+    sdk.on("frameAdded", handleFrameAdded);
+    sdk.on("frameRemoved", handleFrameRemoved);
+
     loadFarcasterUser();
+
+    return () => {
+      sdk.removeAllListeners();
+    };
   }, []);
 
   const toggleModal = () => {
@@ -56,15 +74,13 @@ const Header = ({ tries = 5 }: HeaderProps) => {
     }
   };
 
-  // Display username with fallbacks
   const userDisplayName = username || displayName || (fid ? String(fid) : null);
 
   return (
     <>
       <header className="flex items-center bg-black justify-between w-full p-4 shadow-sm">
-        {/* User profile section on the left */}
-        <div 
-          className={`flex items-center space-x-2 ${isConnected ? "cursor-pointer" : ""}`} 
+        <div
+          className={`flex items-center space-x-2 ${isConnected ? "cursor-pointer" : ""}`}
           onClick={toggleModal}
         >
           {isLoading ? (
@@ -75,9 +91,9 @@ const Header = ({ tries = 5 }: HeaderProps) => {
           ) : isConnected && userDisplayName ? (
             <>
               {pfpUrl ? (
-                <img 
-                  src={pfpUrl} 
-                  alt={`${userDisplayName}'s avatar`} 
+                <img
+                  src={pfpUrl}
+                  alt={`${userDisplayName}'s avatar`}
                   className="w-8 h-8 rounded-full object-cover border border-neutral-400"
                 />
               ) : (
@@ -96,29 +112,25 @@ const Header = ({ tries = 5 }: HeaderProps) => {
             </div>
           )}
         </div>
-        
-        {/* Data section on the right */}
-        <div className="text-white font-medium">
-          {tries} tries
-        </div>
+
+        <div className="text-white font-medium">{tries} tries</div>
       </header>
 
-      {/* User profile modal */}
       {showModal && isConnected && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-5 relative">
-            <button 
+            <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3 text-neutral-400 hover:text-white"
             >
               <X size={20} />
             </button>
-            
+
             <div className="flex items-center space-x-4 mb-4">
               {pfpUrl ? (
-                <img 
-                  src={pfpUrl} 
-                  alt={`${userDisplayName}'s avatar`} 
+                <img
+                  src={pfpUrl}
+                  alt={`${userDisplayName}'s avatar`}
                   className="w-16 h-16 rounded-full object-cover border-2 border-neutral-600"
                 />
               ) : (
@@ -126,7 +138,7 @@ const Header = ({ tries = 5 }: HeaderProps) => {
                   <User size={30} />
                 </div>
               )}
-              
+
               <div>
                 <h3 className="text-white font-bold text-xl">
                   {displayName || `@${username}`}
@@ -136,7 +148,7 @@ const Header = ({ tries = 5 }: HeaderProps) => {
                 </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-neutral-700 rounded p-3">
                 <p className="text-neutral-400 text-sm">FID</p>
@@ -147,7 +159,7 @@ const Header = ({ tries = 5 }: HeaderProps) => {
                 <p className="text-white font-bold">✓</p>
               </div>
             </div>
-            
+
             <button
               onClick={handleViewProfile}
               className="w-full flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition-colors"
