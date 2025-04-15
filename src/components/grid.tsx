@@ -84,90 +84,56 @@ const MinesGame: React.FC = () => {
   
   // Play sounds using a single audio context
   const playSound = (type: 'click' | 'mine' | 'cash') => {
-    // Initialize audio if not already done
-    if (!audioInitializedRef.current) {
-      initAudio();
-    }
-    
+    if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
-    
-    // Ensure context is running (needed for Chrome's autoplay policy)
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(e => console.error("Failed to resume audio context:", e));
+    if (ctx.state === 'suspended') ctx.resume().catch(console.error);
+  
+    const createOsc = (type: OscillatorType, freq: number, duration: number, gain = 0.2) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      g.gain.setValueAtTime(gain, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    };
+  
+    if (type === 'click') {
+      // Wallet coin "ding" – stacked soft triangle tones
+      createOsc('triangle', 1046, 0.12); // C6
+      setTimeout(() => createOsc('triangle', 1318, 0.12), 80); // E6
     }
-    
-    // Create oscillator
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    // Connect nodes
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    // Configure based on sound type
-    switch (type) {
-      case 'click':
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        oscillator.start();
-        oscillator.stop(ctx.currentTime + 0.1);
-        break;
-        
-      case 'mine':
-        oscillator.type = 'sawtooth';
-        oscillator.frequency.setValueAtTime(110, ctx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.2);
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        oscillator.start();
-        oscillator.stop(ctx.currentTime + 0.3);
-        
-        // Add noise burst
-        setTimeout(() => {
-          if (!ctx) return; // Safety check
-          
-          const noiseNode = ctx.createOscillator();
-          const noiseGain = ctx.createGain();
-          noiseNode.type = 'sawtooth';
-          noiseNode.frequency.setValueAtTime(60, ctx.currentTime);
-          noiseGain.gain.setValueAtTime(0.3, ctx.currentTime);
-          noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-          noiseNode.connect(noiseGain);
-          noiseGain.connect(ctx.destination);
-          noiseNode.start();
-          noiseNode.stop(ctx.currentTime + 0.2);
-        }, 50);
-        break;
-        
-      case 'cash':
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(1320, ctx.currentTime);
-        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        oscillator.start();
-        oscillator.stop(ctx.currentTime + 0.1);
-        
-        // Second note
-        setTimeout(() => {
-          if (!ctx) return; // Safety check
-          
-          const oscillator2 = ctx.createOscillator();
-          const gainNode2 = ctx.createGain();
-          oscillator2.type = 'triangle';
-          oscillator2.frequency.setValueAtTime(1650, ctx.currentTime);
-          gainNode2.gain.setValueAtTime(0.2, ctx.currentTime);
-          gainNode2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-          oscillator2.connect(gainNode2);
-          gainNode2.connect(ctx.destination);
-          oscillator2.start();
-          oscillator2.stop(ctx.currentTime + 0.1);
-        }, 100);
-        break;
+  
+    if (type === 'mine') {
+      // Satisfying stop – drop-down bass thump
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.3);
+      g.gain.setValueAtTime(0.5, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+  
+      // Add a short click for punch
+      setTimeout(() => createOsc('square', 80, 0.05, 0.3), 60);
+    }
+  
+    if (type === 'cash') {
+      // Winning sound – melodic triangle tones
+      createOsc('triangle', 1320, 0.12);
+      setTimeout(() => createOsc('triangle', 1650, 0.12), 100);
+      setTimeout(() => createOsc('triangle', 1980, 0.1), 200);
     }
   };
+  
   
   // Initialize the game
   useEffect(() => {
@@ -286,68 +252,57 @@ const MinesGame: React.FC = () => {
     initAudio();
     
     // Prevent clicks if game is over, tile is already revealed, or is currently being processed
-    if (gameOver || revealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
-    
+    if (
+      gameOver ||                     // game ended
+      revealedPositions.includes(index) || // tile already revealed
+      processingTilesRef.current.has(index) || // already being animated
+      clickedMineIndex !== null       // mine already clicked
+    ) return;
+        
     // Mark this tile as being processed to prevent multiple rapid clicks
     processingTilesRef.current.add(index);
     
     const tile = grid[index];
-    
-    // Start animation
-    const newGrid = [...grid];
-    newGrid[index].isAnimating = true;
-    setGrid(newGrid);
-    
-    setTimeout(() => {
-      // Stop animation
-      const updatedGrid = [...newGrid];
-      updatedGrid[index].isAnimating = false;
-      updatedGrid[index].isRevealed = true;
-      setGrid(updatedGrid);
-      
-      if (tile.isMine) {
-        // Hit a mine
-        playSound('mine');
-        
-        // Record which mine was clicked
-        setClickedMineIndex(index);
-        
-        // Set game over
-        setGameOver(true);
-        setBalance(prev => prev - WAGER_AMOUNT);
-        setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
-        
-        // Clear the processing list
-        processingTilesRef.current.clear();
-      } else {
-        // Safe tile
-        playSound('click');
-        
-        // Add to revealed positions in a single step
-        setRevealedPositions(prev => {
-          const newRevealedPositions = [...prev, index];
-          
-          // Calculate potential winnings
-          const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
-          setPotentialWinnings(newPotentialWinnings);
-          
-          // Enable cash out
-          setCanCashOut(true);
-          
-          setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
-          
-          // Check if all safe tiles are revealed (win condition)
-          if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
-            handleCashOut();
-          }
-          
-          // Remove this tile from processing list
-          processingTilesRef.current.delete(index);
-          
-          return newRevealedPositions;
-        });
+
+// If it's a mine, immediately end game to block fast extra taps
+if (tile.isMine) {
+  setClickedMineIndex(index);
+  setGameOver(true);
+}
+
+// Start animation
+const newGrid = [...grid];
+newGrid[index].isAnimating = true;
+setGrid(newGrid);
+
+setTimeout(() => {
+  const updatedGrid = [...newGrid];
+  updatedGrid[index].isAnimating = false;
+  updatedGrid[index].isRevealed = true;
+  setGrid(updatedGrid);
+
+  if (tile.isMine) {
+    playSound('mine');
+    setBalance(prev => prev - WAGER_AMOUNT);
+    setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
+    processingTilesRef.current.clear();
+  } else {
+    playSound('click');
+    setRevealedPositions(prev => {
+      const newRevealedPositions = [...prev, index];
+      const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
+      setPotentialWinnings(newPotentialWinnings);
+      setCanCashOut(true);
+      setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
+      if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
+        handleCashOut();
       }
-    }, ANIMATION_DURATION);
+      processingTilesRef.current.delete(index);
+      return newRevealedPositions;
+    });
+  }
+}, ANIMATION_DURATION);
+
   };
   
   // Handle cash out
