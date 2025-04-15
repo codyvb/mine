@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Header from './header';
+
+const DAILY_LIMIT = 10; // matches backend
 import GameModal from './GameModal';
+import sdk from '@farcaster/frame-sdk';
 
 // Define types for our game
 interface Tile {
@@ -14,6 +17,8 @@ interface Tile {
 }
 
 const MinesGame: React.FC = () => {
+  const [triesLeft, setTriesLeft] = useState(DAILY_LIMIT);
+
   // Keep track of tiles currently being processed to prevent race conditions
   const processingTilesRef = useRef<Set<number>>(new Set());
   // Game constants
@@ -34,7 +39,48 @@ const MinesGame: React.FC = () => {
   const [canCashOut, setCanCashOut] = useState(false);
   const [message, setMessage] = useState('Click on tiles to reveal them!');
   const [gameKey, setGameKey] = useState(0);
-  
+
+  // Server/game integration state
+  const [fid, setFid] = useState<number | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [gameId, setGameId] = useState<string | null>(null);
+  const [isLoadingGame, setIsLoadingGame] = useState(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<string>('');
+
+  // Fetch tries left
+  const fetchTriesLeft = async (userFid: number | null) => {
+    if (!userFid) return;
+    try {
+      const res = await fetch('/api/plays-today', { headers: { 'x-fid': String(userFid) } });
+      const data = await res.json();
+      if (res.ok && typeof data.playsToday === 'number') {
+        setTriesLeft(Math.max(0, DAILY_LIMIT - data.playsToday));
+      }
+    } catch {}
+  };
+
+  // Load Farcaster context
+  useEffect(() => {
+    const loadFarcasterUser = async () => {
+      try {
+        const context = await sdk.context;
+        setFid(context?.user?.fid || null);
+        setIsConnected(!!context?.user?.fid);
+        fetchTriesLeft(context?.user?.fid || null);
+      } catch (e) {
+        setFid(null);
+        setIsConnected(false);
+      }
+    };
+    loadFarcasterUser();
+  }, []);
+
+  // Refetch triesLeft after each round
+  useEffect(() => {
+    if (fid) fetchTriesLeft(fid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameKey]);
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalIsWin, setModalIsWin] = useState(false);
@@ -137,104 +183,87 @@ const MinesGame: React.FC = () => {
   
   // Initialize the game
   useEffect(() => {
-    startNewRound();
-    
-    // Add event listeners for audio initialization
-    const handleUserInteraction = () => {
-      initAudio();
-    };
-    
+    // Only start a new round if user is connected
+    if (isConnected && fid) {
+      startNewRound();
+    }
+    // Audio listeners, viewport, etc (unchanged)
+    const handleUserInteraction = () => { initAudio(); };
     document.addEventListener('click', handleUserInteraction, { once: true });
     document.addEventListener('touchstart', handleUserInteraction, { once: true });
     document.addEventListener('keydown', handleUserInteraction, { once: true });
-    
-    // Add viewport meta tag to prevent scrolling and zooming
     const meta = document.createElement('meta');
     meta.name = 'viewport';
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
     document.head.appendChild(meta);
-    
-    // Apply CSS to handle mobile browsers properly
     const style = document.createElement('style');
-    style.innerHTML = `
-      html, body {
-        height: 100%;
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-      }
-      
-      /* Additional fix for iOS Safari */
-      @supports (-webkit-touch-callout: none) {
-        .safe-height {
-          height: -webkit-fill-available;
-        }
-      }
-    `;
+    style.innerHTML = `html, body {height: 100%;overflow: hidden;position: fixed;width: 100%;}@supports (-webkit-touch-callout: none) {.safe-height {height: -webkit-fill-available;}}`;
     document.head.appendChild(style);
-    
-    // Prevent scrolling by handling touchmove events
-    const preventScroll = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-    
+    const preventScroll = (e: TouchEvent) => {e.preventDefault();};
     document.addEventListener('touchmove', preventScroll, { passive: false });
-    
-    // Cleanup the audio context and event listeners when component unmounts
     return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(e => console.error("Failed to close audio context:", e));
-      }
-      
+      if (audioContextRef.current) audioContextRef.current.close().catch(e => console.error("Failed to close audio context:", e));
       document.removeEventListener('click', handleUserInteraction);
       document.removeEventListener('touchstart', handleUserInteraction);
       document.removeEventListener('keydown', handleUserInteraction);
       document.removeEventListener('touchmove', preventScroll);
-      
-      // Remove the meta tag and style
-      if (meta.parentNode) {
-        meta.parentNode.removeChild(meta);
-      }
-      if (style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
+      if (meta.parentNode) meta.parentNode.removeChild(meta);
+      if (style.parentNode) style.parentNode.removeChild(style);
     };
-  }, []);
-  
-  // Generate a new round
-  const startNewRound = (): void => {
-    // Create a new grid
-    const newGrid = Array(GRID_SIZE * GRID_SIZE).fill(null).map((_, index) => ({
-      id: index,
-      isMine: false,
-      isRevealed: false,
-      isAnimating: false
-    }));
-    
-    // Place mines randomly
-    const mines: number[] = [];
-    while (mines.length < MINE_COUNT) {
-      const position = Math.floor(Math.random() * (GRID_SIZE * GRID_SIZE));
-      if (!mines.includes(position)) {
-        mines.push(position);
-        newGrid[position].isMine = true;
-      }
+  }, [isConnected, fid]);
+
+  // Start a new round (server)
+  const startNewRound = async () => {
+    if (!fid) {
+      setMessage("Connect to Farcaster to play!");
+      setSupabaseStatus("Not connected to Farcaster");
+      return;
     }
-    
-    // Reset game state
-    setGrid(newGrid);
-    setMinePositions(mines);
-    setRevealedPositions([]);
-    setGameOver(false);
-    setGameWon(false);
-    setPotentialWinnings(0);
-    setCanCashOut(false);
-    setMessage('Click on tiles to reveal them!');
-    setClickedMineIndex(null);
-    
-    // Increment the key to force re-render
-    setGameKey(prevKey => prevKey + 1);
+    setIsLoadingGame(true);
+    setSupabaseStatus("Connecting to Supabase...");
+    try {
+      const res = await fetch("/api/start-game", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-fid": String(fid),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.error || "Failed to start game");
+        setSupabaseStatus(data.error || "Supabase error");
+        setIsLoadingGame(false);
+        return;
+      }
+      setGameId(data.gameId);
+      // Initialize grid based on backend response
+      const size = data.gridSize || 25;
+      const newGrid = Array(size).fill(null).map((_, index) => ({
+        id: index,
+        isMine: false, // Don't reveal mines at start
+        isRevealed: (data.revealedPositions || []).includes(index),
+        isAnimating: false
+      }));
+      setGrid(newGrid);
+      setRevealedPositions(data.revealedPositions || []);
+      setMinePositions([]); // Hide mines until game over
+      setGameOver(false);
+      setGameWon(false);
+      setPotentialWinnings(0);
+      setCanCashOut(false);
+      setMessage("Click on tiles to reveal them!");
+      setClickedMineIndex(null);
+      setGameKey(prevKey => prevKey + 1);
+      setSupabaseStatus("Connected to Supabase!");
+    } catch (e) {
+      setMessage("Could not connect to server.");
+      setSupabaseStatus("Could not connect to Supabase");
+    } finally {
+      setIsLoadingGame(false);
+    }
   };
+
   
   // Calculate payout based on revealed safe tiles
   const calculatePayout = (revealedCount: number): number => {
@@ -246,85 +275,103 @@ const MinesGame: React.FC = () => {
     return Math.floor(WAGER_AMOUNT * multiplier);
   };
   
-  // Handle tile click
-  const handleTileClick = (index: number): void => {
-    // Try to init audio on every interaction
+  // Handle tile click (server)
+  const handleTileClick = async (index: number) => {
     initAudio();
-    
-    // Prevent clicks if game is over, tile is already revealed, or is currently being processed
+    if (!fid || !gameId) return;
     if (
-      gameOver ||                     // game ended
-      revealedPositions.includes(index) || // tile already revealed
-      processingTilesRef.current.has(index) || // already being animated
-      clickedMineIndex !== null       // mine already clicked
+      gameOver ||
+      revealedPositions.includes(index) ||
+      processingTilesRef.current.has(index) ||
+      clickedMineIndex !== null
     ) return;
-        
-    // Mark this tile as being processed to prevent multiple rapid clicks
     processingTilesRef.current.add(index);
-    
-    const tile = grid[index];
-
-// If it's a mine, immediately end game to block fast extra taps
-if (tile.isMine) {
-  setClickedMineIndex(index);
-  setGameOver(true);
-}
-
-// Start animation
-const newGrid = [...grid];
-newGrid[index].isAnimating = true;
-setGrid(newGrid);
-
-setTimeout(() => {
-  const updatedGrid = [...newGrid];
-  updatedGrid[index].isAnimating = false;
-  updatedGrid[index].isRevealed = true;
-  setGrid(updatedGrid);
-
-  if (tile.isMine) {
-    playSound('mine');
-    setBalance(prev => prev - WAGER_AMOUNT);
-    setMessage(`Boom! You hit a mine and lost ${WAGER_AMOUNT} credits.`);
-    processingTilesRef.current.clear();
-  } else {
-    playSound('click');
-    setRevealedPositions(prev => {
-      const newRevealedPositions = [...prev, index];
-      const newPotentialWinnings = calculatePayout(newRevealedPositions.length);
-      setPotentialWinnings(newPotentialWinnings);
-      setCanCashOut(true);
-      setMessage(`Safe! Potential payout: ${newPotentialWinnings} credits.`);
-      if (newRevealedPositions.length === (GRID_SIZE * GRID_SIZE) - MINE_COUNT) {
-        handleCashOut();
+    setMessage("Revealing...");
+    try {
+      const res = await fetch("/api/reveal-cell", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-fid": String(fid),
+        },
+        body: JSON.stringify({ gameId, cellIndex: index }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.error || "Failed to reveal cell");
+        processingTilesRef.current.delete(index);
+        return;
+      }
+      setRevealedPositions(data.revealed);
+      setGameOver(data.gameOver);
+      setGameWon(data.won);
+      // Update winnings after each safe reveal
+      if (!data.isMine && !data.gameOver) {
+        const safeTiles = data.revealed.length;
+        const winnings = safeTiles > 0 ? WAGER_AMOUNT * Math.pow(2, safeTiles - 1) : 0;
+        setPotentialWinnings(winnings);
+      }
+      if (data.isMine) {
+        setClickedMineIndex(index);
+        setMessage("Boom! You hit a mine.");
+        playSound('mine');
+        // Reveal all mines
+        if (data.minePositions) {
+          setMinePositions(data.minePositions);
+          setGrid(prevGrid => prevGrid.map((tile, idx) =>
+            data.minePositions.includes(idx)
+              ? { ...tile, isMine: true, isRevealed: true }
+              : tile
+          ));
+        }
+      } else {
+        setMessage("Safe! Keep going.");
+        playSound('click');
       }
       processingTilesRef.current.delete(index);
-      return newRevealedPositions;
-    });
-  }
-}, ANIMATION_DURATION);
+    } catch (e) {
+      setMessage("Could not connect to server.");
+      setSupabaseStatus("Could not connect to Supabase");
+      processingTilesRef.current.delete(index);
+    }
+  };
 
-  };
   
-  // Handle cash out
-  const handleCashOut = (): void => {
-    if (!canCashOut || gameOver) return;
-    
-    // Try to init audio on every interaction
+  // Handle cash out (server)
+  const handleCashOut = async () => {
+    if (!fid || !gameId || !canCashOut || gameOver) return;
     initAudio();
-    
-    // Play cashout sound
-    playSound('cash');
-    
-    // Show win modal
-    setModalIsWin(true);
-    setModalWinAmount(potentialWinnings);
-    setModalOpen(true);
-    
-    setGameWon(true);
-    setGameOver(true);
-    setBalance(prev => prev + potentialWinnings);
-    setMessage(`You cashed out and won ${potentialWinnings} credits!`);
+    setMessage("Cashing out...");
+    try {
+      const res = await fetch("/api/cash-out", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-fid": String(fid),
+        },
+        body: JSON.stringify({ gameId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.error || "Failed to cash out");
+        setSupabaseStatus(data.error || "Supabase error");
+        return;
+      }
+      setGameOver(true);
+      setGameWon(true);
+      setMinePositions(data.minePositions);
+      setRevealedPositions(data.revealed);
+      setModalIsWin(true);
+      setModalWinAmount(potentialWinnings); // Or data.winAmount if you add it to API
+      setModalOpen(true);
+      setMessage("You cashed out!");
+      playSound('cash');
+    } catch (e) {
+      setMessage("Could not connect to server.");
+      setSupabaseStatus("Could not connect to Supabase");
+    }
   };
+
   
   // Modal button handlers
   const handleShareResult = () => {
@@ -360,14 +407,29 @@ setTimeout(() => {
 
   // Dummy functions for the bottom buttons
   const handleButton1Click = () => console.log('Button 1 clicked');
-  const handleButton2Click = () => console.log('Button 2 clicked');
+  // Handle Collect (local, not server cash out)
+const handleCollect = () => {
+  if (gameOver || revealedPositions.length === 0) return;
+  setGameOver(true);
+  setGameWon(true);
+  setModalIsWin(true);
+  setModalWinAmount(potentialWinnings);
+  setModalOpen(true);
+  setMessage("You collected your winnings!");
+  playSound('cash');
+};
   const handleButton3Click = () => console.log('Button 3 clicked');
   const handleButton4Click = () => console.log('Button 4 clicked');
 
   return (
     <div className="flex flex-col h-full w-full bg-neutral-900 text-white overflow-hidden fixed inset-0 safe-height">
-      <Header />
-      
+      <Header tries={triesLeft} />
+      {/* Supabase/Farcaster connection status */}
+      {/* <div className="text-xs text-neutral-400 px-4 pt-2">
+        {isConnected ? `Farcaster FID: ${fid}` : "Not connected"}
+        {gameId && <span> | Game ID: {gameId}</span>}
+        {supabaseStatus && <span> | {supabaseStatus}</span>}
+      </div> */}
       {/* Main container with fixed proportions */}
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
@@ -382,46 +444,22 @@ setTimeout(() => {
               // Determine if this tile is:
               // 1. The clicked mine
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
-              
               // 2. Another mine that should be shown at reduced opacity when game is over
               const isOtherMine = tile.isMine && gameOver && index !== clickedMineIndex;
-              
               // 3. A safe tile that was clicked before game over
-              const isSafeTileRevealed = revealedPositions.includes(index);
-              
+              const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
               // 4. A regular unrevealed tile
               const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
-              
               // Set opacity for different scenarios
               let opacity = 1; // Default full opacity
-              
               if (gameOver) {
                 if (isClickedMine || isSafeTileRevealed) {
-                  // Full opacity for clicked mine and previously revealed safe tiles
                   opacity = 1;
                 } else {
                   // Reduced opacity for other mines and unrevealed tiles
-                  opacity = 0.3;
+                  opacity = 0.5;
                 }
               }
-              
-              // Determine the tile color
-              let tileClassName = 'aspect-square rounded-md flex items-center justify-center text-lg font-bold border-2 transition-colors';
-              
-              if (isClickedMine) {
-                // Clicked mine shows as red
-                tileClassName += ' bg-red-500 border-red-700';
-              } else if (isOtherMine && gameOver) {
-                // Other mines also show as red when game is over
-                tileClassName += ' bg-red-500 border-red-700';
-              } else if (isSafeTileRevealed) {
-                // Revealed safe tile shows as green
-                tileClassName += ' bg-green-500 border-green-600';
-              } else {
-                // Unrevealed tiles are gray
-                tileClassName += ' bg-gray-700 hover:bg-gray-600 border-gray-600';
-              }
-              
               return (
                 <motion.button
   key={`${gameKey}-${index}`}
@@ -513,10 +551,10 @@ setTimeout(() => {
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           {/* Cash out button */}
           <div className="mb-3">
-            {canCashOut && !gameOver ? (
+            {revealedPositions.length > 0 && !gameOver ? (
               <motion.button
                 className="bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-                onClick={handleCashOut}
+                onClick={handleCollect}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -529,7 +567,7 @@ setTimeout(() => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Try Again (5 tries left)
+                Try Again ({triesLeft} tries left)
               </motion.button>
             ) : (
               <button
