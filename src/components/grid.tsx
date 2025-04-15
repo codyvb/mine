@@ -469,29 +469,75 @@ const MinesGame: React.FC = () => {
               
               return (
                 <motion.button
-                  key={`${gameKey}-${index}`}
-                  className={tileClassName}
-                  onClick={() => handleTileClick(index)}
-                  whileHover={!gameOver && !isSafeTileRevealed ? { scale: 1.05 } : undefined}
-                  whileTap={!gameOver && !isSafeTileRevealed ? { scale: 0.95 } : undefined}
-                  style={{ 
-                    touchAction: 'none',
-                    opacity: opacity
-                  }}
-                  animate={
-                    tile.isAnimating
-                      ? { 
-                          scale: [1, 1.1, 0.95, 1], 
-                          rotate: [0, 15, -15, 0], 
-                          borderRadius: "rounded-md" 
-                        }
-                      : undefined
-                  }
-                  transition={{ duration: 0.4 }}
-                >
-                  {/* Show appropriate icon based on state */}
-                  {(isClickedMine || isOtherMine) ? '💣' : isSafeTileRevealed ? '✓' : ''}
-                </motion.button>
+  key={`${gameKey}-${index}`}
+  onClick={() => handleTileClick(index)}
+  className="aspect-square w-full h-full flex items-center justify-center font-bold relative overflow-hidden"
+  style={{
+    touchAction: 'none',
+    opacity,
+    padding: 0,
+    border: 'none',
+    backgroundColor: isSafeTileRevealed
+      ? 'transparent'
+      : isClickedMine
+      ? '#b91c1c'
+      : isOtherMine
+      ? '#7f1d1d'
+      : '#1f2937',
+    borderRadius: isSafeTileRevealed ? '9999px' : '0.5rem',
+  }}
+  animate={
+    tile.isAnimating
+      ? {
+          scale: [1, 1.08, 0.96, 1],
+        }
+      : undefined
+  }
+  transition={{
+    duration: 0.4,
+    ease: [0.34, 1.56, 0.64, 1],
+  }}
+>
+  {/* 💣 Mine reveal */}
+  {(isClickedMine || isOtherMine) && (
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="text-2xl"
+    >
+      💣
+    </motion.div>
+  )}
+
+  {/* ✅ Token: full circle background, no border */}
+  {isSafeTileRevealed && (
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{
+        delay: 0.2,
+        duration: 0.5,
+        type: 'spring',
+        stiffness: 500,
+        damping: 20,
+      }}
+      className="absolute inset-0"
+      style={{
+        borderRadius: '9999px',
+        backgroundImage: 'url(/tokens/higher.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    />
+  )}
+</motion.button>
+
+
+
+
+
+
               );
             })}
           </div>
