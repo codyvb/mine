@@ -471,20 +471,24 @@ const MinesGame: React.FC = () => {
                 <motion.button
   key={`${gameKey}-${index}`}
   onClick={() => handleTileClick(index)}
-  className="aspect-square w-full h-full flex items-center justify-center font-bold relative overflow-hidden"
+  className="aspect-square w-full h-full flex items-center justify-center font-bold relative"
   style={{
     touchAction: 'none',
     opacity,
     padding: 0,
     border: 'none',
-    backgroundColor: isSafeTileRevealed
-      ? 'transparent'
-      : isClickedMine
-      ? '#b91c1c'
-      : isOtherMine
-      ? '#7f1d1d'
-      : '#1f2937',
-    borderRadius: isSafeTileRevealed ? '9999px' : '0.5rem',
+    backgroundColor:
+      isSafeTileRevealed || isClickedMine || isOtherMine
+        ? 'transparent'
+        : tile.isAnimating
+        ? '#4b5563' // lighter during press (gray-600)
+        : '#374151', // default (gray-700)
+    borderRadius:
+      isSafeTileRevealed ? '9999px' : '0.5rem',
+    boxShadow:
+      !isSafeTileRevealed && !isClickedMine && !isOtherMine
+        ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
+        : undefined,
   }}
   animate={
     tile.isAnimating
@@ -498,29 +502,14 @@ const MinesGame: React.FC = () => {
     ease: [0.34, 1.56, 0.64, 1],
   }}
 >
-  {/* 💣 Mine reveal */}
-  {(isClickedMine || isOtherMine) && (
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="text-2xl"
-    >
-      💣
-    </motion.div>
-  )}
-
-  {/* ✅ Token: full circle background, no border */}
+  {/* TOKEN REVEAL */}
   {isSafeTileRevealed && (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
+      initial={{ scale: 0.5, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{
-        delay: 0.2,
-        duration: 0.5,
-        type: 'spring',
-        stiffness: 500,
-        damping: 20,
+        duration: 0.4,
+        ease: [0.34, 1.56, 0.64, 1],
       }}
       className="absolute inset-0"
       style={{
@@ -531,7 +520,29 @@ const MinesGame: React.FC = () => {
       }}
     />
   )}
+
+  {/* MINE REVEAL — stays square */}
+  {(isClickedMine || isOtherMine) && (
+    <motion.div
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{
+        duration: 0.4,
+        ease: [0.34, 1.56, 0.64, 1],
+      }}
+      className="absolute inset-0 flex items-center justify-center text-2xl"
+      style={{
+        borderRadius: '0.5rem',
+        backgroundColor: '#b91c1c', // red-700
+        color: 'white',
+      }}
+    >
+      💣
+    </motion.div>
+  )}
 </motion.button>
+
+
 
 
 
