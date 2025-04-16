@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { ArrowUpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from './header';
 
@@ -129,7 +130,7 @@ const MinesGame: React.FC = () => {
   };
   
   // Play sounds using a single audio context
-  const playSound = (type: 'click' | 'mine' | 'cash') => {
+  const playSound = (type: 'click' | 'mine' | 'cash' | 'please') => {
     if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -177,6 +178,13 @@ const MinesGame: React.FC = () => {
       createOsc('triangle', 1320, 0.12);
       setTimeout(() => createOsc('triangle', 1650, 0.12), 100);
       setTimeout(() => createOsc('triangle', 1980, 0.1), 200);
+    }
+
+    if (type === 'please') {
+      // Soft, pleasant "please" sound (gentle sine up-chirp)
+      createOsc('sine', 600, 0.10, 0.18);
+      setTimeout(() => createOsc('sine', 800, 0.10, 0.14), 60);
+      setTimeout(() => createOsc('triangle', 1000, 0.08, 0.12), 120);
     }
   };
   
@@ -396,7 +404,7 @@ const MinesGame: React.FC = () => {
   };
 
   const handleTryAgain = () => {
-    // Close modal and start new round
+    playSound('please');
     setModalOpen(false);
     startNewRound();
   };
@@ -437,7 +445,7 @@ const handleCollect = () => {
   const handleButton4Click = () => console.log('Button 4 clicked');
 
   return (
-    <div className="flex flex-col h-full w-full bg-neutral-900 text-white overflow-hidden fixed inset-0 safe-height">
+    <div className="flex flex-col h-full w-full bg-black text-white overflow-hidden fixed inset-0 safe-height">
       <Header tries={triesLeft} />
       {/* Supabase/Farcaster connection status */}
       {/* <div className="text-xs text-neutral-400 px-4 pt-2">
@@ -453,7 +461,7 @@ const handleCollect = () => {
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
-        <div className="flex items-center justify-center px-4 py-2 flex-grow">
+        <div className="flex items-center justify-center px-4 py-2 flex-grow bg-black">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
               // Determine if this tile is:
@@ -578,7 +586,7 @@ const handleCollect = () => {
             ) : gameOver ? (
               <motion.button
                 className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-                onClick={startNewRound}
+                onClick={() => { playSound('please'); startNewRound(); }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -586,10 +594,13 @@ const handleCollect = () => {
               </motion.button>
             ) : (
               <button
-                className="bg-gray-600 py-6 px-6 rounded-lg font-bold w-full mx-auto block opacity-70 cursor-not-allowed text-center"
+                className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
+                style={{ height: '72px' }}
                 disabled
-              >
-                <i>Select to begin</i>
+              ><div className="animate-pulse">
+                <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
+                </svg></div>
               </button>
             )}
           </div>
