@@ -285,6 +285,10 @@ const MinesGame: React.FC = () => {
       processingTilesRef.current.has(index) ||
       clickedMineIndex !== null
     ) return;
+    // Immediate animation feedback
+    setGrid(prevGrid => prevGrid.map((tile, idx) =>
+      idx === index ? { ...tile, isAnimating: true } : tile
+    ));
     processingTilesRef.current.add(index);
     setMessage("Revealing...");
     try {
@@ -305,6 +309,22 @@ const MinesGame: React.FC = () => {
       setRevealedPositions(data.revealed);
       setGameOver(data.gameOver);
       setGameWon(data.won);
+      // Remove animation state and update revealed/mine
+      setGrid(prevGrid => prevGrid.map((tile, idx) => {
+        if (idx === index) {
+          return {
+            ...tile,
+            isAnimating: false,
+            isRevealed: true,
+            isMine: data.isMine ? true : tile.isMine
+          };
+        }
+        // If game over and mines need to be revealed
+        if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
+          return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
+        }
+        return tile;
+      }));
       // Update winnings after each safe reveal
       if (!data.isMine && !data.gameOver) {
         const safeTiles = data.revealed.length;
@@ -318,11 +338,6 @@ const MinesGame: React.FC = () => {
         // Reveal all mines
         if (data.minePositions) {
           setMinePositions(data.minePositions);
-          setGrid(prevGrid => prevGrid.map((tile, idx) =>
-            data.minePositions.includes(idx)
-              ? { ...tile, isMine: true, isRevealed: true }
-              : tile
-          ));
         }
       } else {
         setMessage("Safe! Keep going.");
