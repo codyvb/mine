@@ -533,7 +533,7 @@ const handleCollect = () => {
     if (idleTeaseActive) setIdleTeaseActive(false);
     handleTileClick(index);
   }}
-  className={`aspect-square w-full h-full flex items-center justify-center font-bold relative ${isTeasePulse ? 'animate-pulse' : ''}`}
+  className={`aspect-square w-full h-full flex items-center justify-center font-bold relative ${isTeasePulse ? 'tease-glow' : ''}`}
   style={{
     touchAction: 'none',
     opacity,
