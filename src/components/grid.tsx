@@ -38,7 +38,7 @@ const MinesGame: React.FC = () => {
 
   // Idle tease animation state
   const [idleTeaseActive, setIdleTeaseActive] = useState(true);
-  const [teasePulseTiles, setTeasePulseTiles] = useState<number[]>([]);
+  const [teasePulseTile, setTeasePulseTile] = useState<number>(0);
 
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
@@ -453,17 +453,12 @@ const handleCollect = () => {
   useEffect(() => {
     if (!idleTeaseActive) return;
     let timeout: NodeJS.Timeout;
-    function pulseRandomTiles() {
-      // Pick 3 random unique tile indices each cycle
-      const indices: number[] = [];
-      while (indices.length < 3) {
-        const idx = Math.floor(Math.random() * 25);
-        if (!indices.includes(idx)) indices.push(idx);
-      }
-      setTeasePulseTiles(indices);
-      timeout = setTimeout(pulseRandomTiles, 5000);
+    function nextTile() {
+      const idx = Math.floor(Math.random() * 25);
+      setTeasePulseTile(idx);
+      timeout = setTimeout(nextTile, 4000); // 4s per tile, smooth and slow
     }
-    pulseRandomTiles();
+    nextTile();
     return () => clearTimeout(timeout);
   }, [idleTeaseActive]);
 
@@ -505,7 +500,7 @@ const handleCollect = () => {
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
               // Idle tease: pulse certain tiles until user interacts
-              const isTeasePulse = idleTeaseActive && teasePulseTiles.includes(index);
+              const isTeasePulse = idleTeaseActive && teasePulseTile === index;
               // Determine if this tile is:
               // 1. The clicked mine
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
@@ -533,7 +528,10 @@ const handleCollect = () => {
     if (idleTeaseActive) setIdleTeaseActive(false);
     handleTileClick(index);
   }}
-  className={`aspect-square w-full h-full flex items-center justify-center font-bold relative ${isTeasePulse ? 'tease-glow' : ''}`}
+  className={
+    `aspect-square w-full h-full flex items-center justify-center font-bold relative ` +
+    (isTeasePulse ? 'ring-2 ring-yellow-200 ring-offset-2' : '')
+  }
   style={{
     touchAction: 'none',
     opacity,
@@ -548,20 +546,31 @@ const handleCollect = () => {
     borderRadius:
       isSafeTileRevealed ? '9999px' : '0.5rem',
     boxShadow:
-      !isSafeTileRevealed && !isClickedMine && !isOtherMine
+      (!isSafeTileRevealed && !isClickedMine && !isOtherMine)
         ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
         : undefined,
   }}
   animate={
-    tile.isAnimating
+    isTeasePulse
       ? {
-          scale: [1, 1.08, 0.96, 1],
+          scale: [1, 1.08, 1],
+          filter: [
+            'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)',
+            'drop-shadow(0 0 16px #ffe066aa) drop-shadow(0 0 32px #6ec7fa88)',
+            'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)'
+          ]
         }
-      : undefined
+      : {
+          scale: 1,
+          filter: 'none',
+        }
   }
   transition={{
-    duration: 0.4,
-    ease: [0.34, 1.56, 0.64, 1],
+    duration: 4,
+    ease: [0.4, 0, 0.2, 1],
+    times: [0, 0.5, 1],
+    repeat: Infinity,
+    repeatType: 'loop',
   }}
 >
   {/* TOKEN REVEAL */}

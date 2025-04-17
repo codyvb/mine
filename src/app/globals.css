@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* Custom idle tease glowing animation for grid tiles */
-@keyframes tease-glow {
+/* @keyframes tease-glow {
   0% { box-shadow: 0 0 0px 0px #ffe06655, 0 0 0px 0px #6ec7fa44; }
   40% { box-shadow: 0 0 12px 6px #ffe06688, 0 0 24px 12px #6ec7fa66; }
   60% { box-shadow: 0 0 16px 8px #ffe066aa, 0 0 32px 16px #6ec7fa88; }
@@ -12,7 +12,7 @@
 .tease-glow {
   animation: tease-glow 2.8s cubic-bezier(0.4,0,0.2,1) infinite;
   will-change: box-shadow;
-}
+} */
 
 
 
