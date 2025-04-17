@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTries } from './TriesContext';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -18,7 +19,7 @@ interface Tile {
 
 const MinesGame: React.FC = () => {
   const router = useRouter();
-  const [triesLeft, setTriesLeft] = useState(DAILY_LIMIT);
+  const { tries, setTries, fetchTries } = useTries();
 
   // Keep track of tiles currently being processed to prevent race conditions
   const processingTilesRef = useRef<Set<number>>(new Set());
@@ -49,16 +50,8 @@ const MinesGame: React.FC = () => {
   const [supabaseStatus, setSupabaseStatus] = useState<string>('');
 
   // Fetch tries left
-  const fetchTriesLeft = async (userFid: number | null) => {
-    if (!userFid) return;
-    try {
-      const res = await fetch('/api/plays-today', { headers: { 'x-fid': String(userFid) } });
-      const data = await res.json();
-      if (res.ok && typeof data.playsToday === 'number') {
-        setTriesLeft(Math.max(0, DAILY_LIMIT - data.playsToday));
-      }
-    } catch {}
-  };
+  // Fetch tries from context
+  const fetchTriesLeft = fetchTries;
 
   // Load Farcaster context
   useEffect(() => {
@@ -406,8 +399,10 @@ const MinesGame: React.FC = () => {
   const handleTryAgain = () => {
     playSound('please');
     setModalOpen(false);
+    setTries(t => Math.max(0, (t ?? DAILY_LIMIT) - 1)); // Optimistically decrement
     startNewRound();
   };
+
   
   // Handle modal close (X button)
   const handleModalClose = () => {
@@ -589,7 +584,7 @@ const handleCollect = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Try Again ({triesLeft} tries left)
+                Try Again ({tries} tries left)
               </motion.button>
             ) : (
               <button

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { Session } from "next-auth"
 import { SessionProvider } from "next-auth/react"
+import { TriesProvider } from "../components/TriesContext";
 
 
 const WagmiProvider = dynamic(
@@ -15,9 +16,11 @@ const WagmiProvider = dynamic(
 export function Providers({ session, children }: { session: Session | null, children: React.ReactNode }) {
   return (
     <SessionProvider session={session}>
-      <WagmiProvider>
-        {children}
-      </WagmiProvider>
+      <TriesProvider>
+        <WagmiProvider>
+          {children}
+        </WagmiProvider>
+      </TriesProvider>
     </SessionProvider>
   );
 }

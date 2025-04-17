@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTries } from "./TriesContext";
 import { User, X, ExternalLink } from "lucide-react";
 import sdk from "@farcaster/frame-sdk";
 
-interface HeaderProps {
-  tries?: number;
-}
+interface HeaderProps {}
 
-const Header = ({ tries = 5 }: HeaderProps) => {
+const Header = ({}: HeaderProps) => {
+  const { tries } = useTries();
   const [username, setUsername] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [pfpUrl, setPfpUrl] = useState<string | null>(null);
@@ -16,6 +16,8 @@ const Header = ({ tries = 5 }: HeaderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+
 
   useEffect(() => {
     const loadFarcasterUser = async () => {
@@ -113,7 +115,9 @@ const Header = ({ tries = 5 }: HeaderProps) => {
           )}
         </div>
 
-        <div className="text-white font-medium">{tries} tries</div>
+        <div className="text-white font-medium">
+          {tries === null ? <span className="animate-pulse">-</span> : tries} tries
+        </div>
       </header>
 
       {showModal && isConnected && (
