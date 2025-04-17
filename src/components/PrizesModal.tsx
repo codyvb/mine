@@ -1,4 +1,5 @@
 import React from 'react';
+import SendTokenButton from './SendTokenButton';
 
 const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -14,7 +15,9 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
         </button>
         <h1 className="text-2xl font-mono text-center mb-4">Prizes</h1>
         {/* Prizes content goes here */}
-        <div className="text-neutral-300 text-center">Coming soon...</div>
+        <div className="px-5 pb-4 mt-2 flex flex-col justify-center w-full max-w-xs mx-auto">
+          <SendTokenButton />
+        </div>
       </div>
     </div>
   );

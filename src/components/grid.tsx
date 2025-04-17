@@ -29,13 +29,9 @@ const MinesGame: React.FC = () => {
   // Game constants
   const GRID_SIZE = 5;
   const MINE_COUNT = 3;
-  const INITIAL_BALANCE = 1000;
-  const WAGER_AMOUNT = 10;
   const ANIMATION_DURATION = 400;
   
   // Game state
-  const [balance, setBalance] = useState(INITIAL_BALANCE);
-
   // Idle tease animation state
   const [teaseActive, setTeaseActive] = useState(true);
   const [teasePulseTile, setTeasePulseTile] = useState<number | null>(0);
@@ -46,7 +42,7 @@ const MinesGame: React.FC = () => {
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
-  const [potentialWinnings, setPotentialWinnings] = useState(0);
+  const [potentialWinnings, setPotentialWinnings] = useState(0); // now tracks gems revealed
   const [canCashOut, setCanCashOut] = useState(false);
   const [message, setMessage] = useState('Click on tiles to reveal them!');
   const [gameKey, setGameKey] = useState(0);
@@ -277,15 +273,7 @@ const MinesGame: React.FC = () => {
   };
 
   
-  // Calculate payout based on revealed safe tiles
-  const calculatePayout = (revealedCount: number): number => {
-    if (revealedCount === 0) return 0;
-    
-    // Simple exponential payout formula
-    // The more safe tiles revealed, the higher the multiplier
-    const multiplier = 1 + (revealedCount * 0.2);
-    return Math.floor(WAGER_AMOUNT * multiplier);
-  };
+  // No payout math needed for free-to-play gems game.
   
   // Handle tile click (server)
   const handleTileClick = async (index: number) => {
@@ -337,11 +325,9 @@ const MinesGame: React.FC = () => {
         }
         return tile;
       }));
-      // Update winnings after each safe reveal
+      // Update gems after each safe reveal
       if (!data.isMine && !data.gameOver) {
-        const safeTiles = data.revealed.length;
-        const winnings = safeTiles > 0 ? WAGER_AMOUNT * Math.pow(2, safeTiles - 1) : 0;
-        setPotentialWinnings(winnings);
+        setPotentialWinnings(data.revealed.length);
       }
       if (data.isMine) {
         setClickedMineIndex(index);
@@ -389,7 +375,7 @@ const MinesGame: React.FC = () => {
       setMinePositions(data.minePositions);
       setRevealedPositions(data.revealed);
       setModalIsWin(true);
-      setModalWinAmount(potentialWinnings); // Or data.winAmount if you add it to API
+      setModalWinAmount(potentialWinnings); // now gem count
       setModalOpen(true);
       setMessage("You cashed out!");
       playSound('cash');
@@ -424,13 +410,7 @@ const MinesGame: React.FC = () => {
   
   // Handle new round
   const handleNewRound = (): void => {
-    if (!gameOver && revealedPositions.length > 0) {
-      // Player forfeits the current round
-      setBalance(prev => prev - WAGER_AMOUNT);
-      setMessage(`You forfeit and lost ${WAGER_AMOUNT} credits.`);
-    }
-    
-    // Start a new round immediately
+    // No wager/credits to deduct on forfeit in free-to-play mode
     startNewRound();
   };
 
@@ -442,9 +422,9 @@ const handleCollect = () => {
   setGameOver(true);
   setGameWon(true);
   setModalIsWin(true);
-  setModalWinAmount(potentialWinnings);
+  setModalWinAmount(potentialWinnings); // now gem count
   setModalOpen(true);
-  setMessage("You collected your winnings!");
+  setMessage(`You collected ${potentialWinnings} gem${potentialWinnings === 1 ? '' : 's'}!`);
   playSound('cash');
 };
   const handleButton3Click = () => console.log('Button 3 clicked');
@@ -639,7 +619,7 @@ const handleCollect = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Collect ({potentialWinnings} credits)
+                Collect {potentialWinnings} Gem{potentialWinnings === 1 ? '' : 's'}
               </motion.button>
             ) : gameOver ? (
               <motion.button
