@@ -1,10 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowUpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import Header from './header';
-import Nav from './Nav';
 import { useRouter } from 'next/navigation';
 
 const DAILY_LIMIT = 10; // matches backend
@@ -448,8 +445,7 @@ const handleCollect = () => {
   const handleButton4Click = () => console.log('Button 4 clicked');
 
   return (
-    <div className="flex flex-col h-full w-full bg-black text-white overflow-hidden fixed inset-0 safe-height">
-      <Header tries={triesLeft} />
+    <div className="flex flex-col h-full w-full text-white  inset-0 safe-height">
       {/* Supabase/Farcaster connection status */}
       {/* <div className="text-xs text-neutral-400 px-4 pt-2">
         {isConnected ? `Farcaster FID: ${fid}` : "Not connected"}
@@ -459,12 +455,12 @@ const handleCollect = () => {
       {/* Main container with fixed proportions */}
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
-        <div className="bg-black flex items-center h-full justify-center py-4">
+        <div className=" flex items-center h-full justify-center py-4">
           <h1 className="text-2xl font-mono text-center">find some gems</h1>
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
-        <div className="flex items-center justify-center px-4 py-2 flex-grow bg-black">
+        <div className="flex items-center justify-center px-4 py-2 flex-grow ">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
               // Determine if this tile is:
@@ -608,8 +604,6 @@ const handleCollect = () => {
             )}
           </div>
           
-          {/* Navigation - now using Nav component */}
-          <Nav active="home" />
         </div>
       </div>
       

@@ -78,7 +78,7 @@ const Header = ({ tries = 5 }: HeaderProps) => {
 
   return (
     <>
-      <header className="flex items-center bg-black justify-between w-full p-4 shadow-sm">
+      <header className="flex items-center justify-between w-full p-4 shadow-sm">
         <div
           className={`flex items-center space-x-2 ${isConnected ? "cursor-pointer" : ""}`}
           onClick={toggleModal}
@@ -117,7 +117,7 @@ const Header = ({ tries = 5 }: HeaderProps) => {
       </header>
 
       {showModal && isConnected && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-5 relative">
             <button
               onClick={() => setShowModal(false)}
