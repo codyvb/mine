@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom idle tease animation for grid tiles */
+@keyframes tease-pulse {
+  0% { transform: scale(1); opacity: 1; }
+  20% { transform: scale(1.08); opacity: 0.7; }
+  40% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1.08); opacity: 0.7; }
+  80% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.tease-pulse {
+  animation: tease-pulse 4.8s cubic-bezier(0.4,0,0.2,1) both;
+}
+
 
 body {
   color: #ffffff;

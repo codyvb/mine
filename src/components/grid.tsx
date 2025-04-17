@@ -21,6 +21,9 @@ const MinesGame: React.FC = () => {
   const router = useRouter();
   const { tries, setTries, fetchTries } = useTries();
 
+  // UI loading state
+  const [isUILoading, setIsUILoading] = useState(true);
+
   // Keep track of tiles currently being processed to prevent race conditions
   const processingTilesRef = useRef<Set<number>>(new Set());
   // Game constants
@@ -32,6 +35,11 @@ const MinesGame: React.FC = () => {
   
   // Game state
   const [balance, setBalance] = useState(INITIAL_BALANCE);
+
+  // Idle tease animation state
+  const [idleTeaseActive, setIdleTeaseActive] = useState(true);
+  const [teasePulseTiles, setTeasePulseTiles] = useState<number[]>([]);
+
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
@@ -64,6 +72,8 @@ const MinesGame: React.FC = () => {
       } catch (e) {
         setFid(null);
         setIsConnected(false);
+      } finally {
+        setIsUILoading(false); // Mark UI as loaded after async/game state is ready
       }
     };
     loadFarcasterUser();
@@ -439,6 +449,42 @@ const handleCollect = () => {
   const handleButton3Click = () => console.log('Button 3 clicked');
   const handleButton4Click = () => console.log('Button 4 clicked');
 
+  // Idle tease animation effect
+  useEffect(() => {
+    if (!idleTeaseActive) return;
+    let timeout: NodeJS.Timeout;
+    function pulseRandomTiles() {
+      // Pick 3 random unique tile indices each cycle
+      const indices: number[] = [];
+      while (indices.length < 3) {
+        const idx = Math.floor(Math.random() * 25);
+        if (!indices.includes(idx)) indices.push(idx);
+      }
+      setTeasePulseTiles(indices);
+      timeout = setTimeout(pulseRandomTiles, 5000);
+    }
+    pulseRandomTiles();
+    return () => clearTimeout(timeout);
+  }, [idleTeaseActive]);
+
+  if (isUILoading) {
+    // Show pulsing grid skeleton while loading
+    return (
+      <div className="flex flex-col h-full w-full justify-center items-center">
+        <div className="flex items-center justify-center px-4 py-2 flex-grow">
+          <div className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
+            {[...Array(25)].map((_, i) => (
+              <div
+                key={i}
+                className="aspect-square w-full h-full bg-neutral-700 rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full w-full text-white justify-center  inset-0 safe-height">
       {/* Supabase/Farcaster connection status */}
@@ -458,6 +504,8 @@ const handleCollect = () => {
         <div className="flex items-center justify-center px-4 py-2 flex-grow ">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
+              // Idle tease: pulse certain tiles until user interacts
+              const isTeasePulse = idleTeaseActive && teasePulseTiles.includes(index);
               // Determine if this tile is:
               // 1. The clicked mine
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
@@ -480,8 +528,12 @@ const handleCollect = () => {
               return (
                 <motion.button
   key={`${gameKey}-${index}`}
-  onClick={() => handleTileClick(index)}
-  className="aspect-square w-full h-full flex items-center justify-center font-bold relative"
+  onClick={() => {
+    // End idle tease on first user interaction
+    if (idleTeaseActive) setIdleTeaseActive(false);
+    handleTileClick(index);
+  }}
+  className={`aspect-square w-full h-full flex items-center justify-center font-bold relative ${isTeasePulse ? 'animate-pulse' : ''}`}
   style={{
     touchAction: 'none',
     opacity,
