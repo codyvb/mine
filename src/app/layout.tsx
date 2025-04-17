@@ -19,14 +19,14 @@ export default async function RootLayout({
   
   return (
     <html lang="en">
-      <body className=" text-white min-h-screen flex flex-col">
+      <body className="text-white min-h-screen">
         <Providers session={session}>
-          <div className="flex flex-col min-h-screen w-full">
+          <div className="min-h-screen w-full">
             <Header />
             <main className="flex-1 flex flex-col w-full overflow-hidden">
               {children}
             </main>
-            <Nav active="home" />
+
           </div>
         </Providers>
       </body>

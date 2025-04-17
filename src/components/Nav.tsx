@@ -4,31 +4,26 @@ import Link from 'next/link';
 
 interface NavProps {
   active?: 'home' | 'leaderboard' | 'prizes';
+  onOpenLeaderboard?: () => void;
+  onOpenPrizes?: () => void;
 }
 
-const Nav: React.FC<NavProps> = ({ active }) => (
-  <div className="flex flex-row gap-2 w-full px-5 pb-10 justify-center overflow-x-auto">
-    <Link href="/" passHref legacyBehavior>
-      <a
-        className={`bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm block text-center${active === 'home' ? ' font-bold' : ''}`}
-      >
-        home
-      </a>
-    </Link>
-    <Link href="/leaderboard" passHref legacyBehavior>
-      <a
-        className={`bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm block text-center${active === 'leaderboard' ? ' font-bold' : ''}`}
-      >
-        leaderboard
-      </a>
-    </Link>
-    <Link href="/prizes" passHref legacyBehavior>
-      <a
-        className={`bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm block text-center${active === 'prizes' ? ' font-bold' : ''}`}
-      >
-        prizes
-      </a>
-    </Link>
+const Nav: React.FC<NavProps> = ({ active, onOpenLeaderboard, onOpenPrizes }) => (
+  <div className="fixed pb-10 bottom-0 left-0 w-full bg-black z-50 flex flex-row gap-4 px-5 py-4 justify-center">
+    <button
+      className={`flex-1 px-4 py-5 bg-neutral-700 hover:bg-neutral-800 text-white rounded-md transition-colors text-sm ${active === 'leaderboard' ? 'bg-neutral-800' : ''}`}
+      onClick={onOpenLeaderboard}
+      type="button"
+    >
+      Leaderboard
+    </button>
+    <button
+      className={`flex-1 px-4 py-5 bg-neutral-700 hover:bg-neutral-800 text-white rounded-md transition-colors text-sm ${active === 'prizes' ? 'bg-neutral-800' : ''}`}
+      onClick={onOpenPrizes}
+      type="button"
+    >
+      Prizes
+    </button>
   </div>
 );
 
