@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from './header';
+import Nav from './Nav';
+import { useRouter } from 'next/navigation';
 
 const DAILY_LIMIT = 10; // matches backend
 import GameModal from './GameModal';
@@ -18,6 +20,7 @@ interface Tile {
 }
 
 const MinesGame: React.FC = () => {
+  const router = useRouter();
   const [triesLeft, setTriesLeft] = useState(DAILY_LIMIT);
 
   // Keep track of tiles currently being processed to prevent race conditions
@@ -605,29 +608,8 @@ const handleCollect = () => {
             )}
           </div>
           
-          {/* Navigation buttons */}
-          <div className="flex gap-2 w-full mb-3 mx-auto">
-            <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
-              onClick={handleButton1Click}
-            >
-              home
-            </button>
-            
-            <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
-              onClick={handleButton3Click}
-            >
-              leaderboard
-            </button>
-            
-            <button 
-              className="bg-neutral-600 w-full hover:bg-neutral-700 py-4 rounded-lg transition-colors text-sm"
-              onClick={handleButton4Click}
-            >
-              prizes
-            </button>
-          </div>
+          {/* Navigation - now using Nav component */}
+          <Nav active="home" />
         </div>
       </div>
       
