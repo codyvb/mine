@@ -24,7 +24,7 @@ const TokenToast: React.FC<TokenToastProps> = ({ hash, amount, to, loading, erro
     {loading ? (
       <div className="flex items-center gap-2">
         <span className="animate-spin rounded-full h-4 w-4 border-2 border-purple-400 border-t-transparent inline-block" />
-        <span className="text-purple-300 font-medium">Sending 1 Token...</span>
+        <span className="text-purple-300 font-medium">Sending {amount} Token{amount === '1' ? '' : 's'}...</span>
       </div>
     ) : error ? (
       <div className="text-red-400 font-semibold text-sm">{error}</div>

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 const DAILY_LIMIT = 10; // matches backend
 import GameModal from './GameModal';
 import sdk from '@farcaster/frame-sdk';
+import TokenToast from './TokenToast';
 
 // Define types for our game
 interface Tile {
@@ -416,17 +417,70 @@ const MinesGame: React.FC = () => {
 
   // Dummy functions for the bottom buttons
   const handleButton1Click = () => console.log('Button 1 clicked');
-  // Handle Collect (local, not server cash out)
-const handleCollect = () => {
-  if (gameOver || revealedPositions.length === 0) return;
-  setGameOver(true);
-  setGameWon(true);
-  setModalIsWin(true);
-  setModalWinAmount(potentialWinnings); // now gem count
-  setModalOpen(true);
-  setMessage(`You collected ${potentialWinnings} gem${potentialWinnings === 1 ? '' : 's'}!`);
-  playSound('cash');
-};
+  // Handle Collect (secure, server verified)
+  const [tokenToast, setTokenToast] = useState<{ loading: boolean; hash?: string; amount?: number; to?: string; error?: string | null } | null>(null);
+  // Store the server-verified amount for the toast
+  const [verifiedTokenAmount, setVerifiedTokenAmount] = useState<number | null>(null);
+  const handleCollect = async () => {
+    if (gameOver || revealedPositions.length === 0 || !fid || !gameId) return;
+    // Open congrats modal immediately
+    setGameOver(true);
+    setGameWon(true);
+    setModalIsWin(true);
+    setModalWinAmount(potentialWinnings);
+    setModalOpen(true);
+    setTokenToast({ loading: true });
+    try {
+      // 1. Call /api/cash-out to finalize the game and get verified winnings
+      const cashRes = await fetch("/api/cash-out", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-fid": String(fid),
+        },
+        body: JSON.stringify({ gameId }),
+      });
+      const cashData = await cashRes.json();
+      if (!cashRes.ok) {
+        setTokenToast({ loading: false, error: cashData.error || "Failed to cash out" });
+        return;
+      }
+      // Server will have validated and ended the game, and we can trust the revealed count
+      const verifiedAmount = cashData.revealed?.length || 0;
+      setVerifiedTokenAmount(verifiedAmount); // <-- Save for use in toast
+      // 2. Call /api/send-token with only the FID; backend will securely determine the amount
+      const sendRes = await fetch("/api/send-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-fid": String(fid),
+        },
+      });
+      const sendData = await sendRes.json();
+      if (!sendRes.ok) {
+        setTokenToast({ loading: false, error: sendData.error || "Failed to send token" });
+        return;
+      }
+      // Show the toast with tx info (address, amount, hash)
+      setTokenToast({
+        loading: false,
+        hash: sendData.hash,
+        amount: sendData.amount || verifiedAmount,
+        to: sendData.to || '', // backend should return recipient address if possible
+        error: null,
+      });
+      // Optionally, update modal/game state
+      setGameOver(true);
+      setGameWon(true);
+      setModalIsWin(true);
+      setModalWinAmount(verifiedAmount);
+      setModalOpen(true);
+      setMessage(`You collected ${verifiedAmount} gem${verifiedAmount === 1 ? '' : 's'}!`);
+      playSound('cash');
+    } catch (e: any) {
+      setTokenToast({ loading: false, error: e.message || "Unknown error" });
+    }
+  };
   const handleButton3Click = () => console.log('Button 3 clicked');
   const handleButton4Click = () => console.log('Button 4 clicked');
 
@@ -646,6 +700,22 @@ const handleCollect = () => {
         </div>
       </div>
       
+      {/* Toast for token send */}
+      {tokenToast && (
+        <TokenToast
+          loading={tokenToast.loading}
+          hash={tokenToast.hash || ''}
+          // Show correct token count in loading state
+          amount={
+            tokenToast.loading
+              ? (verifiedTokenAmount?.toString() || '')
+              : (tokenToast.amount?.toString() || verifiedTokenAmount?.toString() || '')
+          }
+          to={tokenToast.to || ''}
+          error={tokenToast.error}
+          onClose={() => setTokenToast(null)}
+        />
+      )}
       {/* Modal component */}
       <GameModal 
         isOpen={modalOpen}

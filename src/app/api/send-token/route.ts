@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server';
 import { parseUnits, JsonRpcProvider, Wallet, Contract } from 'ethers';
+import { createClient } from '@supabase/supabase-js';
 
 const TOKEN_ADDRESS = '0xF4123bC7E8849C009fcaf4D5C5E9F847BbD60f6B';
-// TO_ADDRESS will be determined dynamically from Neynar
-const AMOUNT = parseUnits('1', 18); // 1 token, 18 decimals
 const BASE_RPC_URL = process.env.BASE_RPC_URL;
 const BASE_PRIVATE_KEY = process.env.BASE_PRIVATE_KEY;
 
 const ERC20_ABI = [
   'function transfer(address to, uint amount) public returns (bool)'
 ];
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 
 export async function POST(req: Request) {
   if (!BASE_PRIVATE_KEY || !BASE_RPC_URL || !process.env.NEXT_PUBLIC_NEYNAR_API_KEY) {
@@ -51,13 +56,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch user address from Neynar' }, { status: 500 });
   }
 
+  // Look up most recent unclaimed win for this FID
+  const { data: game, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('fid', fid)
+    .eq('won', true)
+    .is('claimed_at', null)
+    .order('ended_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !game) {
+    return NextResponse.json({ error: 'No unclaimed win found for this user.' }, { status: 404 });
+  }
+  const amountToSend = Array.isArray(game.revealed_positions) ? game.revealed_positions.length : 1; // fallback to 1
+  if (!amountToSend || amountToSend < 1) {
+    return NextResponse.json({ error: 'No winnings to send.' }, { status: 400 });
+  }
+
   try {
     const provider = new JsonRpcProvider(BASE_RPC_URL);
     const wallet = new Wallet(BASE_PRIVATE_KEY, provider);
     const token = new Contract(TOKEN_ADDRESS, ERC20_ABI, wallet);
-    const tx = await token.transfer(ethAddress, AMOUNT);
+    const tx = await token.transfer(ethAddress, parseUnits(amountToSend.toString(), 18));
     await tx.wait();
-    return NextResponse.json({ hash: tx.hash });
+    // Mark this game as claimed
+    await supabase
+      .from('games')
+      .update({ claimed_at: new Date().toISOString() })
+      .eq('id', game.id);
+    return NextResponse.json({ hash: tx.hash, amount: amountToSend, to: ethAddress });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
