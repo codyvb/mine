@@ -37,8 +37,9 @@ const MinesGame: React.FC = () => {
   const [balance, setBalance] = useState(INITIAL_BALANCE);
 
   // Idle tease animation state
-  const [idleTeaseActive, setIdleTeaseActive] = useState(true);
-  const [teasePulseTile, setTeasePulseTile] = useState<number>(0);
+  const [teaseActive, setTeaseActive] = useState(true);
+  const [teasePulseTile, setTeasePulseTile] = useState<number | null>(0);
+  const [teaseKey, setTeaseKey] = useState(0);
 
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
@@ -451,16 +452,19 @@ const handleCollect = () => {
 
   // Idle tease animation effect
   useEffect(() => {
-    if (!idleTeaseActive) return;
     let timeout: NodeJS.Timeout;
-    function nextTile() {
-      const idx = Math.floor(Math.random() * 25);
-      setTeasePulseTile(idx);
-      timeout = setTimeout(nextTile, 4000); // 4s per tile, smooth and slow
+    if (teaseActive) {
+      function nextTile() {
+        const idx = Math.floor(Math.random() * 25);
+        setTeasePulseTile(idx);
+        timeout = setTimeout(nextTile, 4000); // 4s per tile, smooth and slow
+      }
+      nextTile();
+    } else {
+      setTeasePulseTile(null); // Remove all glow immediately
     }
-    nextTile();
     return () => clearTimeout(timeout);
-  }, [idleTeaseActive]);
+  }, [teaseActive, teaseKey]);
 
   if (isUILoading) {
     // Show pulsing grid skeleton while loading
@@ -500,7 +504,7 @@ const handleCollect = () => {
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
               // Idle tease: pulse certain tiles until user interacts
-              const isTeasePulse = idleTeaseActive && teasePulseTile === index;
+              const isTeasePulse = teaseActive && teasePulseTile !== null && teasePulseTile === index;
               // Determine if this tile is:
               // 1. The clicked mine
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
@@ -522,15 +526,17 @@ const handleCollect = () => {
               }
               return (
                 <motion.button
-  key={`${gameKey}-${index}`}
+  key={`${gameKey}-${teaseKey}-${index}`}
   onClick={() => {
-    // End idle tease on first user interaction
-    if (idleTeaseActive) setIdleTeaseActive(false);
+    if (teaseActive) {
+      setTeaseActive(false);
+      setTeaseKey(k => k + 1); // force remount
+    }
     handleTileClick(index);
   }}
   className={
-    `aspect-square w-full h-full flex items-center justify-center font-bold relative ` +
-    (isTeasePulse ? 'ring-2 ring-yellow-200 ring-offset-2' : '')
+    `aspect-square w-full h-full flex items-center justify-center font-bold relative` +
+    (teaseActive && isTeasePulse ? ' ring-2 ring-yellow-200 ring-offset-2' : '')
   }
   style={{
     touchAction: 'none',
@@ -550,28 +556,25 @@ const handleCollect = () => {
         ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
         : undefined,
   }}
-  animate={
-    isTeasePulse
-      ? {
+  {...(teaseActive && isTeasePulse
+    ? {
+        animate: {
           scale: [1, 1.08, 1],
           filter: [
             'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)',
             'drop-shadow(0 0 16px #ffe066aa) drop-shadow(0 0 32px #6ec7fa88)',
             'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)'
           ]
+        },
+        transition: {
+          duration: 4,
+          ease: [0.4, 0, 0.2, 1],
+          times: [0, 0.5, 1],
+          repeat: Infinity,
+          repeatType: 'loop',
         }
-      : {
-          scale: 1,
-          filter: 'none',
-        }
-  }
-  transition={{
-    duration: 4,
-    ease: [0.4, 0, 0.2, 1],
-    times: [0, 0.5, 1],
-    repeat: Infinity,
-    repeatType: 'loop',
-  }}
+      }
+    : {})}
 >
   {/* TOKEN REVEAL */}
   {isSafeTileRevealed && (
