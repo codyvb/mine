@@ -440,7 +440,7 @@ const handleCollect = () => {
   const handleButton4Click = () => console.log('Button 4 clicked');
 
   return (
-    <div className="flex flex-col h-full w-full text-white  inset-0 safe-height">
+    <div className="flex flex-col h-full w-full text-white justify-center  inset-0 safe-height">
       {/* Supabase/Farcaster connection status */}
       {/* <div className="text-xs text-neutral-400 px-4 pt-2">
         {isConnected ? `Farcaster FID: ${fid}` : "Not connected"}
