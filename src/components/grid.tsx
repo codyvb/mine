@@ -450,7 +450,7 @@ const handleCollect = () => {
       {/* Main container with fixed proportions */}
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
-        <div className=" flex items-center h-full justify-center py-4">
+        <div className=" flex items-center h-full justify-center py-2">
           <h1 className="text-2xl font-mono text-center">find some gems</h1>
         </div>
         
