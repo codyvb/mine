@@ -22,7 +22,7 @@ const Nav: React.FC<NavProps> = ({ active, onOpenLeaderboard, onOpenPrizes }) =>
       onClick={onOpenPrizes}
       type="button"
     >
-      Prizes
+      Gems
     </button>
   </div>
 );
