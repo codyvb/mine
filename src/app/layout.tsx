@@ -9,6 +9,41 @@ import Nav from '../components/Nav';
 
 export const metadata: Metadata = {
   title: "Gems",
+  icons: [
+    { rel: "icon", url: "/favicon.ico" },
+    { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
+    { rel: "icon", url: "/favicon-32x32.png", sizes: "32x32" },
+    { rel: "icon", url: "/favicon-16x16.png", sizes: "16x16" },
+  ],
+  openGraph: {
+    title: "Gems",
+    images: [
+      {
+        url: "https://www.gems.rip/card.png",
+        width: 1200,
+        height: 630,
+        alt: "",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gems",
+    images: ["https://www.gems.rip/card.png"],
+  },
+  other: {
+    'fc:frame': JSON.stringify({
+      version: "1",
+      name: "Gems",
+      iconUrl: "https://www.gems.rip/icon2.png",
+      homeUrl: "https://gems.rip",
+      imageUrl: "https://www.gems.rip/card.png",
+      buttonTitle: "Launch",
+      splashImageUrl: "https://www.gems.rip/icon2.png",
+      splashBackgroundColor: "#f7f7f7",
+      webhookUrl: "https://gems.rip/api/webhook"
+    })
+  }
 };
 
 export default async function RootLayout({
