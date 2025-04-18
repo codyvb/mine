@@ -1,3 +1,5 @@
+'use client';
+
 import { Metadata } from "next";
 import App from "./app";
 
@@ -18,20 +20,23 @@ const frame = {
   },
 };
 
-export const revalidate = 300;
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "Gems",
-    openGraph: {
-      title: "Gems",
-    },
-    other: {
-      "fc:frame": JSON.stringify(frame),
-    },
-  };
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+function isWarpcast() {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.includes("warpcast") || ua.includes("farcaster");
 }
 
 export default function Home() {
-  return (<App />);
+  const router = useRouter();
+  useEffect(() => {
+    if (!isWarpcast()) {
+      router.replace("/teaser");
+    }
+  }, [router]);
+  return <App />;
 }
+
