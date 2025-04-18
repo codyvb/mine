@@ -41,7 +41,7 @@ export default function TeaserPage() {
           rel="noopener noreferrer"
           className="mt-8 inline-flex flex-row items-center justify-center px-8 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-white text-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400  whitespace-nowrap"
         >
-          <span className="whitespace-nowrap">Open in Warpcast</span>
+          <span className="whitespace-nowrap">Open in Farcaster</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="ml-3 h-5 w-5 text-white"

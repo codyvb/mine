@@ -6,13 +6,13 @@
     },
     "frame": {
       "version": "1",
-      "name": "Grid",
-      "iconUrl": "https://www.sidequest.build/fox.png",
-      "imageUrl": "https://www.sidequest.build/card.png",
+      "name": "Gems",
+      "iconUrl": "https://www.gems.rip/icon2.png",
+      "imageUrl": "https://www.gems.rip/card.png",
       "buttonTitle": "Launch",
-      "splashImageUrl": "https://www.sidequest.build/fox.png",
+      "splashImageUrl": "https://www.gems.rip/icon2.png",
       "splashBackgroundColor": "#000000",
-      "webhookUrl": "https://mine-psi-seven.vercel.app",
-      "homeUrl": "https://mine-psi-seven.vercel.app"
+      "webhookUrl": "https://gems.rip/api/webhook",
+      "homeUrl": "https://gems.rip"
     }
   }
