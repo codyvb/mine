@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 const DAILY_LIMIT = 10; // matches backend
 import GameModal from './GameModal';
+import CountdownToReset from './CountdownToReset';
 import sdk from '@farcaster/frame-sdk';
 import TokenToast from './TokenToast';
 
@@ -20,7 +21,7 @@ interface Tile {
 
 const MinesGame: React.FC = () => {
   const router = useRouter();
-  const { tries, setTries, fetchTries } = useTries();
+  const { tries, setTries, fetchTries, nextReset } = useTries();
 
   // UI loading state
   const [isUILoading, setIsUILoading] = useState(true);
@@ -514,6 +515,15 @@ const MinesGame: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // If out of tries, show countdown instead of grid/buttons
+  if (tries === 0) {
+    return (
+      <div className="flex flex-col h-full w-full justify-center items-center">
+        <CountdownToReset nextReset={nextReset} />
       </div>
     );
   }

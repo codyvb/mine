@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTries } from "./TriesContext";
 import { User, X, ExternalLink } from "lucide-react";
 import sdk from "@farcaster/frame-sdk";
@@ -8,7 +8,7 @@ import sdk from "@farcaster/frame-sdk";
 interface HeaderProps {}
 
 const Header = ({}: HeaderProps) => {
-  const { tries } = useTries();
+  const { tries, fetchTries } = useTries();
   const [username, setUsername] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [pfpUrl, setPfpUrl] = useState<string | null>(null);
@@ -16,6 +16,13 @@ const Header = ({}: HeaderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  // Fetch tries when fid changes
+  React.useEffect(() => {
+    if (fid) {
+      fetchTries(fid);
+    }
+  }, [fid, fetchTries]);
 
 
 

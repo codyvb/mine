@@ -4,6 +4,7 @@ interface TriesContextType {
   tries: number | null;
   setTries: React.Dispatch<React.SetStateAction<number | null>>;
   fetchTries: (fid: number | null) => Promise<void>;
+  nextReset: string | null;
 }
 
 export const TriesContext = createContext<TriesContextType | undefined>(undefined);
@@ -17,13 +18,16 @@ export function useTries() {
 export const TriesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tries, setTries] = useState<number | null>(null);
 
+  const [nextReset, setNextReset] = useState<string | null>(null);
+
   const fetchTries = useCallback(async (fid: number | null) => {
     if (!fid) return;
     try {
-      const res = await fetch('/api/plays-today', { headers: { 'x-fid': String(fid) } });
+      const res = await fetch('/api/get-daily-plays', { headers: { 'x-fid': String(fid) } });
       const data = await res.json();
-      if (res.ok && typeof data.playsToday === 'number') {
-        setTries(Math.max(0, 10 - data.playsToday));
+      if (res.ok && typeof data.playsLeft === 'number') {
+        setTries(data.playsLeft);
+        setNextReset(data.nextReset || null);
       }
     } catch {
       // ignore
@@ -31,7 +35,7 @@ export const TriesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <TriesContext.Provider value={{ tries, setTries, fetchTries }}>
+    <TriesContext.Provider value={{ tries, setTries, fetchTries, nextReset }}>
       {children}
     </TriesContext.Provider>
   );
