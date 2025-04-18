@@ -38,8 +38,20 @@ const CountdownToReset: React.FC<CountdownToResetProps> = ({ nextReset, onReset 
 
   const { hours, minutes, seconds } = timeLeft;
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg bg-neutral-800 text-white font-bold text-lg w-full mx-auto">
-      <span className="mt-1 text-base font-normal text-neutral-300">Next play in {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}</span>
+    <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg text-white  text-lg w-full mx-auto">
+      {/* 5x5 grid of tiles */}
+      <div className=" flex items-center mb-3 h-full justify-center py-2">
+          <h1 className="text-2xl font-mono text-center">out of tries</h1>
+        </div>
+      <div className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square mb-4">
+        {[...Array(25)].map((_, i) => (
+          <div
+            key={i}
+            className="aspect-square w-full h-full bg-neutral-800 rounded-lg border border-neutral-700"
+          />
+        ))}
+      </div>
+      <span className="mt-3 text-xl font-normal text-neutral-300">Next play in {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}</span>
     </div>
   );
 };

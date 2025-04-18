@@ -35,7 +35,16 @@ export async function GET(req: Request): Promise<Response> {
   if (gamesError) {
     return NextResponse.json({ error: 'Failed to count plays' }, { status: 500 });
   }
-  const maxPlays = 30;
+  // Fetch maxPlays from config
+  const { data: maxPlaysRow, error: maxPlaysError } = await supabase
+    .from('config')
+    .select('value')
+    .eq('key', 'max_plays')
+    .maybeSingle();
+  if (maxPlaysError || !maxPlaysRow) {
+    return NextResponse.json({ error: 'Config not found' }, { status: 500 });
+  }
+  const maxPlays = parseInt(maxPlaysRow.value, 10) || 30;
   const playsLeft = Math.max(0, maxPlays - (playCount || 0));
 
   // 3. Calculate next communal reset (assume daily at same UTC time)
