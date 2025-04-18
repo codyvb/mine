@@ -1,18 +1,18 @@
 {
-    "accountAssociation": {
-      "header": "eyJmaWQiOjc0NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDM3NUMxZEU1Nzk1MTRkOTBEYTcwMjc1MDdFMkM0N0M5MzkzMUQxQjcifQ",
-      "payload": "eyJkb21haW4iOiJtaW5pLnNpZGVxdWVzdC5idWlsZCJ9",
-      "signature": "MHhjYTgxMWY4NjA4MzhkYTk1NmMzYzE2M2YxZmQwOTY5MzI3Mjk4N2U4ZmYyMTUzYzJmMDFiMjZiYzRlOWY1N2I3MjM5ZWY5MjJhNjQ1MjlhZTMxMjQ5MmYyOTc3ZjU0NmE5NmMwMzA3MGQ4NDBhZmY2MzdjMDg2MWU3ZjA3ZmYzMzFi"
-    },
-    "frame": {
-      "version": "1",
-      "name": "Gems",
-      "iconUrl": "https://www.gems.rip/icon2.png",
-      "imageUrl": "https://www.gems.rip/card.png",
-      "buttonTitle": "Launch",
-      "splashImageUrl": "https://www.gems.rip/icon2.png",
-      "splashBackgroundColor": "#000000",
-      "webhookUrl": "https://gems.rip/api/webhook",
-      "homeUrl": "https://gems.rip"
-    }
+  "accountAssociation": {
+    "header": "eyJmaWQiOjc0NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDM3NUMxZEU1Nzk1MTRkOTBEYTcwMjc1MDdFMkM0N0M5MzkzMUQxQjcifQ",
+    "payload": "eyJkb21haW4iOiJ3d3cuZ2Vtcy5yaXAifQ",
+    "signature": "MHg3YjQ3Y2RmOWMwYWVhMzU0YTFlZmM3MTFjZTlmN2Y2OTI3MTJiZjY5ZDcyZjQ1NjQzYjJjN2UyNGFjOGZkZTI4MDFkMDU2NmQxMTY4MTgxNjI2ZGU0Nzg5ZTg1MGZhMDc3NTIwOGQ3N2QyMWQ3MmY2MzgzOGYxNWRkNjBiODk4ZjFj"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Gems",
+    "iconUrl": "https://www.gems.rip/icon2.png",
+    "imageUrl": "https://www.gems.rip/card.png",
+    "buttonTitle": "Launch",
+    "splashImageUrl": "https://www.gems.rip/icon2.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://gems.rip/api/webhook",
+    "homeUrl": "https://gems.rip"
   }
+} 
