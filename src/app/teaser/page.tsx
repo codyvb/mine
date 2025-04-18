@@ -1,8 +1,23 @@
 'use client';
 
+"use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useFarcaster } from "../../components/FarcasterContext";
 
 export default function TeaserPage() {
+  const router = useRouter();
+  const { isConnected, isLoading } = useFarcaster();
+
+  if (isLoading) return null; // Or a loading spinner
+
+  if (isConnected) {
+    if (typeof window !== "undefined") {
+      router.replace("/");
+    }
+    return null;
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full ">
       <div className="flex flex-col items-center justify-center  p-8 max-w-xs w-full mx-auto">
