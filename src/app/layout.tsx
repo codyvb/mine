@@ -33,15 +33,19 @@ export const metadata: Metadata = {
   },
   other: {
     'fc:frame': JSON.stringify({
-      version: "1",
-      name: "Gems",
-      iconUrl: "https://www.gems.rip/icon2.png",
-      homeUrl: "https://gems.rip",
+      version: "next",
       imageUrl: "https://www.gems.rip/card.png",
-      buttonTitle: "Launch",
-      splashImageUrl: "https://www.gems.rip/icon2.png",
-      splashBackgroundColor: "#f7f7f7",
-      webhookUrl: "https://gems.rip/api/webhook"
+      aspectRatio: "3:2",
+      button: {
+        title: "Launch Gems",
+        action: {
+          type: "launch_frame",
+          name: "Gems",
+          url: "https://gems.rip",
+          splashImageUrl: "https://www.gems.rip/icon2.png",
+          splashBackgroundColor: "#f7f7f7"
+        }
+      }
     })
   }
 };
