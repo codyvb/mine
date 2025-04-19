@@ -613,20 +613,26 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
               // 2. Another mine that should be shown at reduced opacity when game is over
               const isOtherMine = tile.isMine && gameOver && index !== clickedMineIndex;
-              // 3. A safe tile that was clicked before game over
-              const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
-              // 4. A regular unrevealed tile
-              const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
-              // Set opacity for different scenarios
-              let opacity = 1; // Default full opacity
-              if (gameOver) {
-                if (isClickedMine || isSafeTileRevealed) {
-                  opacity = 1;
-                } else {
-                  // Reduced opacity for other mines and unrevealed tiles
-                  opacity = 0.5;
-                }
-              }
+               // 3. A safe tile that was clicked before game over
+               const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
+               // 4. A regular unrevealed tile
+               const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
+
+               // New: Is this an unrevealed safe tile at game over?
+               const isUnrevealedSafe = gameOver && !tile.isMine && !revealedPositions.includes(index);
+
+               // Set opacity for different scenarios
+               let opacity = 1; // Default full opacity
+               if (gameOver) {
+                 if (isClickedMine || isSafeTileRevealed) {
+                   opacity = 1;
+                 } else if (isUnrevealedSafe) {
+                   opacity = 0.7;
+                 } else {
+                   // Reduced opacity for other mines and unrevealed tiles
+                   opacity = 0.5;
+                 }
+               }
               return (
                 <motion.button
   key={`${gameKey}-${index}`}
@@ -676,7 +682,19 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
     />
   )}
 
-  {/* MINE REVEAL — stays square */}
+  {/* UNREVEALED SAFE TILE (show at 70% opacity) */}
+  {isUnrevealedSafe && (
+    <div
+      className="absolute inset-0"
+      style={{
+        borderRadius: '9999px',
+        backgroundImage: 'url(/tokens/horse.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        opacity: 0.3,
+      }}
+    />
+  )}
   {(isClickedMine || isOtherMine) && (
     <motion.div
       initial={{ scale: 0.5, opacity: 0 }}
