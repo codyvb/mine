@@ -1,4 +1,5 @@
 import React from 'react';
+import sdk from '@farcaster/frame-sdk';
 
 interface TokenToastProps {
   hash: string;
@@ -42,6 +43,7 @@ const TokenToast: React.FC<TokenToastProps> = ({ hash, amount, to, loading, erro
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-blue-400 underline hover:text-blue-300 mt-1"
+          
         >
           View on BaseScan
         </a>

@@ -5,7 +5,6 @@ import { useTries } from './TriesContext';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
-const DAILY_LIMIT = 10; // matches backend
 import GameModal from './GameModal';
 import CountdownToReset from './CountdownToReset';
 import sdk from '@farcaster/frame-sdk';
@@ -20,6 +19,9 @@ interface Tile {
 }
 
 const MinesGame: React.FC = () => {
+  // Track if the congrats modal was ever closed by the user
+  // Tracks if the congrats modal was closed by the user (never reopens for this round)
+  const [modalManuallyClosed, setModalManuallyClosed] = useState(false);
   const router = useRouter();
   const { tries, setTries, fetchTries, nextReset } = useTries();
 
@@ -32,12 +34,6 @@ const MinesGame: React.FC = () => {
   const GRID_SIZE = 5;
   const MINE_COUNT = 3;
   const ANIMATION_DURATION = 400;
-  
-  // Game state
-  // Idle tease animation state
-  const [teaseActive, setTeaseActive] = useState(true);
-  const [teasePulseTile, setTeasePulseTile] = useState<number | null>(0);
-  const [teaseKey, setTeaseKey] = useState(0);
 
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
@@ -132,7 +128,8 @@ const MinesGame: React.FC = () => {
   };
   
   // Play sounds using a single audio context
-  const playSound = (type: 'click' | 'mine' | 'cash' | 'please') => {
+  // type 'sent' is for transaction confirmation (bright, rising arpeggio)
+const playSound = (type: 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
     if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -187,6 +184,29 @@ const MinesGame: React.FC = () => {
       createOsc('sine', 600, 0.10, 0.18);
       setTimeout(() => createOsc('sine', 800, 0.10, 0.14), 60);
       setTimeout(() => createOsc('triangle', 1000, 0.08, 0.12), 120);
+    }
+
+    if (type === 'sent') {
+      // Transaction confirmation: "woosh" sending effect (longer, deeper up-chirp with air)
+      const ctxNow = ctx.currentTime;
+      // Main woosh: sine up-chirp
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, ctxNow);
+      osc.frequency.exponentialRampToValueAtTime(1800, ctxNow + 0.44);
+      g.gain.setValueAtTime(0.19, ctxNow);
+      g.gain.linearRampToValueAtTime(0.28, ctxNow + 0.10);
+      g.gain.linearRampToValueAtTime(0.01, ctxNow + 0.44);
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(200, ctxNow);
+      filter.frequency.linearRampToValueAtTime(1800, ctxNow + 0.44);
+      osc.connect(g);
+      g.connect(filter);
+      filter.connect(ctx.destination);
+      osc.start(ctxNow);
+      osc.stop(ctxNow + 0.45);
     }
   };
   
@@ -378,7 +398,6 @@ const MinesGame: React.FC = () => {
       setRevealedPositions(data.revealed);
       setModalIsWin(true);
       setModalWinAmount(potentialWinnings); // now gem count
-      setModalOpen(true);
       setMessage("You cashed out!");
       playSound('cash');
     } catch (e) {
@@ -393,43 +412,54 @@ const MinesGame: React.FC = () => {
     // Close modal and start new round
     setModalOpen(false);
     startNewRound();
+    // modalManuallyClosed will reset via useEffect on gameKey change
+    // The modal will only open again if the user explicitly collects in the new round
   };
 
   const handleTryAgain = () => {
     playSound('please');
     setModalOpen(false);
-    setTries(t => Math.max(0, (t ?? DAILY_LIMIT) - 1)); // Optimistically decrement
+    setTries(t => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
     startNewRound();
+    // modalManuallyClosed will reset via useEffect on gameKey change
+    // The modal will only open again if the user explicitly collects in the new round
   };
 
-  
   // Handle modal close (X button)
   const handleModalClose = () => {
-    // Close modal and start new round
+    setModalManuallyClosed(true);
     setModalOpen(false);
-    startNewRound();
-  };
-  
-  // Handle new round
-  const handleNewRound = (): void => {
-    // No wager/credits to deduct on forfeit in free-to-play mode
-    startNewRound();
+    // DO NOT startNewRound here; let user explicitly start a new round via Try Again or Share
+    // The modal will only open again if the user explicitly collects in the new round
   };
 
+  // Ensure modalEverClosed resets on new round
+  useEffect(() => {
+    setModalManuallyClosed(false);
+  }, [gameKey]);
+
   // Dummy functions for the bottom buttons
-  const handleButton1Click = () => console.log('Button 1 clicked');
+  
   // Handle Collect (secure, server verified)
   const [tokenToast, setTokenToast] = useState<{ loading: boolean; hash?: string; amount?: number; to?: string; error?: string | null } | null>(null);
   // Store the server-verified amount for the toast
   const [verifiedTokenAmount, setVerifiedTokenAmount] = useState<number | null>(null);
   const handleCollect = async () => {
     if (gameOver || revealedPositions.length === 0 || !fid || !gameId) return;
-    // Open congrats modal immediately
-    setGameOver(true);
-    setGameWon(true);
-    setModalIsWin(true);
-    setModalWinAmount(potentialWinnings);
-    setModalOpen(true);
+    // Open congrats modal immediately, but only ONCE per round
+    if (!modalOpen && !modalManuallyClosed) {
+      setGameOver(true);
+      setGameWon(true);
+      setModalIsWin(true);
+      setModalWinAmount(potentialWinnings);
+      setModalOpen(true);
+    } else {
+      setGameOver(true);
+      setGameWon(true);
+      setModalIsWin(true);
+      setModalWinAmount(potentialWinnings);
+    }
+    playSound('cash'); // Play success sound immediately when user collects
     setTokenToast({ loading: true });
     try {
       // 1. Call /api/cash-out to finalize the game and get verified winnings
@@ -470,36 +500,15 @@ const MinesGame: React.FC = () => {
         to: sendData.to || '', // backend should return recipient address if possible
         error: null,
       });
-      // Optionally, update modal/game state
-      setGameOver(true);
-      setGameWon(true);
-      setModalIsWin(true);
-      setModalWinAmount(verifiedAmount);
-      setModalOpen(true);
-      setMessage(`You collected ${verifiedAmount} gem${verifiedAmount === 1 ? '' : 's'}!`);
-      playSound('cash');
+      playSound('sent'); // Play transaction confirmation sound
+      // DO NOT update game state here! Only the toast and sound.
+      // All game state is set at collect/cash-out time above.
+      // NO setGameOver, setGameWon, setModalIsWin, setModalWinAmount, setModalOpen, or setMessage here!
+      // playSound('cash') REMOVED from here
     } catch (e: any) {
       setTokenToast({ loading: false, error: e.message || "Unknown error" });
     }
   };
-  const handleButton3Click = () => console.log('Button 3 clicked');
-  const handleButton4Click = () => console.log('Button 4 clicked');
-
-  // Idle tease animation effect
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    if (teaseActive) {
-      function nextTile() {
-        const idx = Math.floor(Math.random() * 25);
-        setTeasePulseTile(idx);
-        timeout = setTimeout(nextTile, 4000); // 4s per tile, smooth and slow
-      }
-      nextTile();
-    } else {
-      setTeasePulseTile(null); // Remove all glow immediately
-    }
-    return () => clearTimeout(timeout);
-  }, [teaseActive, teaseKey]);
 
   if (isUILoading) {
     // Show pulsing grid skeleton while loading
@@ -530,25 +539,17 @@ const MinesGame: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full w-full text-white justify-center  inset-0 safe-height">
-      {/* Supabase/Farcaster connection status */}
-      {/* <div className="text-xs text-neutral-400 px-4 pt-2">
-        {isConnected ? `Farcaster FID: ${fid}` : "Not connected"}
-        {gameId && <span> | Game ID: {gameId}</span>}
-        {supabaseStatus && <span> | {supabaseStatus}</span>}
-      </div> */}
       {/* Main container with fixed proportions */}
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
         <div className=" flex items-center h-full justify-center py-2">
-          <h1 className="text-2xl font-mono text-center">find some gems</h1>
+          <h1 className="text-2xl text-center">Find some gems</h1>
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
         <div className="flex items-center justify-center px-4 py-2 flex-grow ">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
-              // Idle tease: pulse certain tiles until user interacts
-              const isTeasePulse = teaseActive && teasePulseTile !== null && teasePulseTile === index;
               // Determine if this tile is:
               // 1. The clicked mine
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
@@ -570,17 +571,10 @@ const MinesGame: React.FC = () => {
               }
               return (
                 <motion.button
-  key={`${gameKey}-${teaseKey}-${index}`}
-  onClick={() => {
-    if (teaseActive) {
-      setTeaseActive(false);
-      setTeaseKey(k => k + 1); // force remount
-    }
-    handleTileClick(index);
-  }}
+  key={`${gameKey}-${index}`}
+  onClick={() => handleTileClick(index)}
   className={
-    `aspect-square w-full h-full flex items-center justify-center font-bold relative` +
-    (teaseActive && isTeasePulse ? ' ring-2 ring-yellow-200 ring-offset-2' : '')
+    `aspect-square w-full h-full flex items-center justify-center font-bold relative`
   }
   style={{
     touchAction: 'none',
@@ -600,25 +594,7 @@ const MinesGame: React.FC = () => {
         ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
         : undefined,
   }}
-  {...(teaseActive && isTeasePulse
-    ? {
-        animate: {
-          scale: [1, 1.08, 1],
-          filter: [
-            'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)',
-            'drop-shadow(0 0 16px #ffe066aa) drop-shadow(0 0 32px #6ec7fa88)',
-            'drop-shadow(0 0 0px #ffe06655) drop-shadow(0 0 0px #6ec7fa44)'
-          ]
-        },
-        transition: {
-          duration: 4,
-          ease: [0.4, 0, 0.2, 1],
-          times: [0, 0.5, 1],
-          repeat: Infinity,
-          repeatType: 'loop',
-        }
-      }
-    : {})}
+  // Idle tease animation props removed
 >
   {/* TOKEN REVEAL */}
   {isSafeTileRevealed && (
