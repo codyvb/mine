@@ -347,11 +347,10 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       processingTilesRef.current.has(index)
     ) return;
     initAudio();
-    // Optimistic reveal: immediately mark tile as revealed and animating
+    // Animation feedback only (no optimistic reveal)
     setGrid(prevGrid => prevGrid.map((tile, idx) =>
-      idx === index ? { ...tile, isAnimating: true, isRevealed: true } : tile
+      idx === index ? { ...tile, isAnimating: true } : tile
     ));
-    setRevealedPositions(prev => prev.includes(index) ? prev : [...prev, index]);
     // Only add to processingTilesRef AFTER all checks
     processingTilesRef.current.add(index);
     setMessage("Revealing...");
