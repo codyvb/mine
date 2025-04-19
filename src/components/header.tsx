@@ -123,7 +123,7 @@ const Header = ({}: HeaderProps) => {
         </div>
 
         <div className="text-white font-medium">
-          {tries === null ? <span className="animate-pulse">-</span> : tries} tries
+          {tries === null ? <span className="animate-pulse">-</span> : tries} Tries
         </div>
       </header>
 

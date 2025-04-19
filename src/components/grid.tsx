@@ -355,42 +355,47 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         processingTilesRef.current.delete(index);
         return;
       }
-      setRevealedPositions(data.revealed);
-      setGameOver(data.gameOver);
-      setGameWon(data.won);
-      // Remove animation state and update revealed/mine
-      setGrid(prevGrid => prevGrid.map((tile, idx) => {
-        if (idx === index) {
+        // --- Merge revealed positions optimistically ---
+        setRevealedPositions(prev => Array.from(new Set([...prev, ...data.revealed])));
+        setGameOver(data.gameOver);
+        setGameWon(data.won);
+        setGrid(prevGrid => prevGrid.map((tile, idx) => {
+          // Always keep revealed if it was revealed locally or by server
+          const revealed = tile.isRevealed || data.revealed.includes(idx);
+          if (idx === index) {
+            return {
+              ...tile,
+              isAnimating: false,
+              isRevealed: revealed,
+              isMine: data.isMine ? true : tile.isMine
+            };
+          }
+          // If game over and mines need to be revealed
+          if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
+            return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
+          }
           return {
             ...tile,
-            isAnimating: false,
-            isRevealed: true,
-            isMine: data.isMine ? true : tile.isMine
+            isRevealed: revealed
           };
+        }));
+        // Update gems after each safe reveal
+        if (!data.isMine && !data.gameOver) {
+          setPotentialWinnings(data.revealed.length);
         }
-        // If game over and mines need to be revealed
-        if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
-          return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
+        if (data.isMine) {
+          setClickedMineIndex(index);
+          setMessage("Boom! You hit a mine.");
+          playSound('mine');
+          // Reveal all mines
+          if (data.minePositions) {
+            setMinePositions(data.minePositions);
+          }
+        } else {
+          setMessage("Safe! Keep going.");
+          playSound('click');
         }
-        return tile;
-      }));
-      // Update gems after each safe reveal
-      if (!data.isMine && !data.gameOver) {
-        setPotentialWinnings(data.revealed.length);
-      }
-      if (data.isMine) {
-        setClickedMineIndex(index);
-        setMessage("Boom! You hit a mine.");
-        playSound('mine');
-        // Reveal all mines
-        if (data.minePositions) {
-          setMinePositions(data.minePositions);
-        }
-      } else {
-        setMessage("Safe! Keep going.");
-        playSound('click');
-      }
-      processingTilesRef.current.delete(index);
+        processingTilesRef.current.delete(index);
     } catch (e) {
       setMessage("Could not connect to server.");
       setSupabaseStatus("Could not connect to Supabase");
