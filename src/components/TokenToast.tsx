@@ -43,7 +43,15 @@ const TokenToast: React.FC<TokenToastProps> = ({ hash, amount, to, loading, erro
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-blue-400 underline hover:text-blue-300 mt-1"
-          
+          onClick={e => {
+            const url = `${BASESCAN_URL}${hash}`;
+            const fc = (typeof window !== 'undefined') ? (window as any).farcaster : undefined;
+            const wc = (typeof window !== 'undefined') ? (window as any).Warpcast : undefined;
+            if ((fc && typeof fc.openUrl === 'function') || (wc && typeof wc.openUrl === 'function')) {
+              e.preventDefault();
+              sdk.actions.openUrl(url);
+            }
+          }}
         >
           View on BaseScan
         </a>

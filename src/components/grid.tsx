@@ -129,7 +129,7 @@ const MinesGame: React.FC = () => {
   
   // Play sounds using a single audio context
   // type 'sent' is for transaction confirmation (bright, rising arpeggio)
-const playSound = (type: 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
+const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
     if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -148,6 +148,11 @@ const playSound = (type: 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
       osc.stop(ctx.currentTime + duration);
     };
   
+    if (type === 'press') {
+      // Quick, suspenseful click (short, sharp, lower-pitch)
+      createOsc('square', 340, 0.07, 0.18);
+      setTimeout(() => createOsc('triangle', 500, 0.05, 0.12), 35);
+    }
     if (type === 'click') {
       // Wallet coin "ding" – stacked soft triangle tones
       createOsc('triangle', 1046, 0.12); // C6
@@ -572,7 +577,10 @@ const playSound = (type: 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
               return (
                 <motion.button
   key={`${gameKey}-${index}`}
-  onClick={() => handleTileClick(index)}
+  onClick={() => {
+    playSound('press');
+    handleTileClick(index);
+  }}
   className={
     `aspect-square w-full h-full flex items-center justify-center font-bold relative`
   }
@@ -608,7 +616,7 @@ const playSound = (type: 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
       className="absolute inset-0"
       style={{
         borderRadius: '9999px',
-        backgroundImage: 'url(/tokens/higher.png)',
+        backgroundImage: 'url(/tokens/horse.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
