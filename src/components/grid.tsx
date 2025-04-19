@@ -747,11 +747,28 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         {safeRevealedCount}/22
       </span>
       <motion.button
-        className="flex-[2] bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center"
-        style={{ maxWidth: '100%' }}
+        key={`collect-gems-${gameKey}-${safeRevealedCount}`}
+        className={[
+          'flex-[2] py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center',
+          safeRevealedCount < 4
+            ? 'bg-green-700 text-white saturate-75 hover:bg-green-600'
+            : safeRevealedCount < 10
+            ? 'bg-green-600 text-white saturate-100 hover:bg-green-500'
+            : safeRevealedCount < 15
+            ? 'bg-green-500 text-white saturate-150 ring-2 ring-green-300 font-extrabold scale-100 hover:bg-green-400'
+            : 'bg-emerald-400 text-white saturate-200 ring-4 ring-green-300 font-extrabold scale-105 hover:bg-emerald-300',
+        ].join(' ')}
+        style={{
+          maxWidth: '100%',
+          filter: safeRevealedCount < 4 ? 'saturate(0.8) brightness(1)' : safeRevealedCount > 12 ? 'drop-shadow(0 0 16px #34d399)' : undefined,
+          boxShadow: safeRevealedCount > 9 ? '0 0 16px 2px #6ee7b7' : undefined,
+          transition: 'all 0.3s cubic-bezier(.4,2,.6,1)',
+        }}
         onClick={handleCollect}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: safeRevealedCount > 3 ? 1.07 : 1.01 }}
+        whileTap={{ scale: 0.97 }}
+
+        disabled={safeRevealedCount < 1}
       >
         Collect Gems
       </motion.button>
