@@ -384,6 +384,8 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
           setPotentialWinnings(data.revealed.length);
         }
         if (data.isMine) {
+          setGameOver(true);
+          setGameWon(false);
           setClickedMineIndex(index);
           setMessage("Boom! You hit a mine.");
           playSound('mine');
@@ -477,7 +479,9 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   // Store the server-verified amount for the toast
   const [verifiedTokenAmount, setVerifiedTokenAmount] = useState<number | null>(null);
   const handleCollect = async () => {
-    if (gameOver || revealedPositions.length === 0 || !fid || !gameId) return;
+  // Allow collect if player hasn't lost and has revealed at least one tile
+  if (gameOver && !gameWon) return;
+  if (revealedPositions.length === 0 || !fid || !gameId) return;
     // Open congrats modal immediately, but only ONCE per round
     if (!modalOpen && !modalManuallyClosed) {
       setGameOver(true);
@@ -687,35 +691,37 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           {/* Cash out button */}
           <div className="mb-3">
-            {revealedPositions.length > 0 && !gameOver ? (
-              <motion.button
-                className="bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-                onClick={handleCollect}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Collect {potentialWinnings} Gem{potentialWinnings === 1 ? '' : 's'}
-              </motion.button>
-            ) : gameOver ? (
-              <motion.button
-                className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-                onClick={() => { playSound('please'); startNewRound(); }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Try Again ({tries} tries left)
-              </motion.button>
-            ) : (
-              <button
-                className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
-                style={{ height: '72px' }}
-                disabled
-              ><div className="animate-pulse">
-                <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
-                </svg></div>
-              </button>
-            )}
+            {gameOver ? (
+  <motion.button
+    className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
+    onClick={() => { playSound('please'); startNewRound(); }}
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+  >
+    Try Again ({tries} tries left)
+  </motion.button>
+) : (
+  revealedPositions.length > 0 ? (
+    <motion.button
+      className="bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
+      onClick={handleCollect}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      Collect {potentialWinnings} Gem{potentialWinnings === 1 ? '' : 's'}
+    </motion.button>
+  ) : (
+    <button
+      className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
+      style={{ height: '72px' }}
+      disabled
+    ><div className="animate-pulse">
+      <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
+      </svg></div>
+    </button>
+  )
+)}
           </div>
           
         </div>
