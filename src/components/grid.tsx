@@ -40,7 +40,11 @@ const MinesGame: React.FC = () => {
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
-  const [potentialWinnings, setPotentialWinnings] = useState(0); // now tracks gems revealed
+  const [mineHit, setMineHit] = useState(false);
+  // --- REMOVE potentialWinnings state ---
+// const [potentialWinnings, setPotentialWinnings] = useState(0); // now tracks gems revealed
+// Instead, always derive the count below:
+const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx].isMine).length;
   const [canCashOut, setCanCashOut] = useState(false);
   const [message, setMessage] = useState('Click on tiles to reveal them!');
   const [gameKey, setGameKey] = useState(0);
@@ -271,6 +275,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
 
   // Start a new round (server)
   const startNewRound = async () => {
+    setMineHit(false);
     if (!fid) {
       setMessage("Connect to Farcaster to play!");
       setSupabaseStatus("Not connected to Farcaster");
@@ -307,7 +312,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       setMinePositions([]); // Hide mines until game over
       setGameOver(false);
       setGameWon(false);
-      setPotentialWinnings(0);
+      // setPotentialWinnings(0); // removed, always derived.
       setCanCashOut(false);
       setMessage("Click on tiles to reveal them!");
       setClickedMineIndex(null);
@@ -381,11 +386,12 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         }));
         // Update gems after each safe reveal
         if (!data.isMine && !data.gameOver) {
-          setPotentialWinnings(data.revealed.length);
+          // setPotentialWinnings removed; always use derived safeRevealedCount.
         }
         if (data.isMine) {
           setGameOver(true);
           setGameWon(false);
+          setMineHit(true);
           setClickedMineIndex(index);
           setMessage("Boom! You hit a mine.");
           playSound('mine');
@@ -431,7 +437,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       setMinePositions(data.minePositions);
       setRevealedPositions(data.revealed);
       setModalIsWin(true);
-      setModalWinAmount(potentialWinnings); // now gem count
+      setModalWinAmount(safeRevealedCount); // now gem count
       setMessage("You cashed out!");
       playSound('cash');
     } catch (e) {
@@ -451,6 +457,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   };
 
   const handleTryAgain = () => {
+  setMineHit(false);
     playSound('please');
     setModalOpen(false);
     setTries(t => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
@@ -463,8 +470,8 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   const handleModalClose = () => {
     setModalManuallyClosed(true);
     setModalOpen(false);
-    // DO NOT startNewRound here; let user explicitly start a new round via Try Again or Share
-    // The modal will only open again if the user explicitly collects in the new round
+    setMineHit(false);
+    startNewRound();
   };
 
   // Ensure modalEverClosed resets on new round
@@ -481,19 +488,20 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   const handleCollect = async () => {
   // Allow collect if player hasn't lost and has revealed at least one tile
   if (gameOver && !gameWon) return;
+  if (mineHit) return;
   if (revealedPositions.length === 0 || !fid || !gameId) return;
     // Open congrats modal immediately, but only ONCE per round
     if (!modalOpen && !modalManuallyClosed) {
       setGameOver(true);
       setGameWon(true);
       setModalIsWin(true);
-      setModalWinAmount(potentialWinnings);
+      setModalWinAmount(safeRevealedCount);
       setModalOpen(true);
     } else {
       setGameOver(true);
       setGameWon(true);
       setModalIsWin(true);
-      setModalWinAmount(potentialWinnings);
+      setModalWinAmount(safeRevealedCount);
     }
     playSound('cash'); // Play success sound immediately when user collects
     setTokenToast({ loading: true });
@@ -691,7 +699,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           {/* Cash out button */}
           <div className="mb-3">
-            {gameOver ? (
+            {mineHit ? (
   <motion.button
     className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
     onClick={() => { playSound('please'); startNewRound(); }}
@@ -708,7 +716,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
-      Collect {potentialWinnings} Gem{potentialWinnings === 1 ? '' : 's'}
+      Collect {safeRevealedCount} Gem{safeRevealedCount === 1 ? '' : 's'}
     </motion.button>
   ) : (
     <button
