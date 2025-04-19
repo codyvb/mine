@@ -39,6 +39,7 @@ const MinesGame: React.FC = () => {
   const [minePositions, setMinePositions] = useState<number[]>([]);
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
+const gameOverRef = useRef(false);
   const [gameWon, setGameWon] = useState(false);
   const [mineHit, setMineHit] = useState(false);
   // --- REMOVE potentialWinnings state ---
@@ -134,6 +135,7 @@ const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx
   // Play sounds using a single audio context
   // type 'sent' is for transaction confirmation (bright, rising arpeggio)
 const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
+  if (gameOverRef.current && (type === 'press' || type === 'click')) return;
     if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -275,7 +277,11 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
 
   // Start a new round (server)
   const startNewRound = async () => {
-    setMineHit(false);
+  gameOverRef.current = false;
+  processingTilesRef.current = new Set();
+  setMineHit(false);
+  setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
+
     if (!fid) {
       setMessage("Connect to Farcaster to play!");
       setSupabaseStatus("Not connected to Farcaster");
@@ -331,18 +337,22 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   
   // Handle tile click (server)
   const handleTileClick = async (index: number) => {
-    initAudio();
-    if (!fid || !gameId) return;
+    // ABSOLUTELY NO SOUND if game is over (sync ref)
+    if (gameOverRef.current) {
+  processingTilesRef.current.delete(index);
+  return;
+}
     if (
-      gameOver ||
       revealedPositions.includes(index) ||
-      processingTilesRef.current.has(index) ||
-      clickedMineIndex !== null
+      processingTilesRef.current.has(index)
     ) return;
-    // Immediate animation feedback
+    initAudio();
+    // Optimistic reveal: immediately mark tile as revealed and animating
     setGrid(prevGrid => prevGrid.map((tile, idx) =>
-      idx === index ? { ...tile, isAnimating: true } : tile
+      idx === index ? { ...tile, isAnimating: true, isRevealed: true } : tile
     ));
+    setRevealedPositions(prev => prev.includes(index) ? prev : [...prev, index]);
+    // Only add to processingTilesRef AFTER all checks
     processingTilesRef.current.add(index);
     setMessage("Revealing...");
     try {
@@ -389,16 +399,17 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
           // setPotentialWinnings removed; always use derived safeRevealedCount.
         }
         if (data.isMine) {
+          gameOverRef.current = true;
           setGameOver(true);
           setGameWon(false);
           setMineHit(true);
           setClickedMineIndex(index);
           setMessage("Boom! You hit a mine.");
           playSound('mine');
-          // Reveal all mines
           if (data.minePositions) {
             setMinePositions(data.minePositions);
           }
+          return;
         } else {
           setMessage("Safe! Keep going.");
           playSound('click');
@@ -457,7 +468,11 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   };
 
   const handleTryAgain = () => {
+  gameOverRef.current = false;
+  processingTilesRef.current = new Set();
   setMineHit(false);
+  setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
+
     playSound('please');
     setModalOpen(false);
     setTries(t => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
