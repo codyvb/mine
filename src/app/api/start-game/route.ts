@@ -25,7 +25,18 @@ export async function POST(req: Request) {
     .eq('play_date', today)
     .maybeSingle();
 
-  if (existing && existing.count >= 10) {
+  // Fetch max_plays from config table
+  let maxPlays = 1000000; // fallback default
+  const { data: configRow } = await supabase
+    .from('config')
+    .select('value')
+    .eq('key', 'max_plays')
+    .maybeSingle();
+  if (configRow && !isNaN(Number(configRow.value))) {
+    maxPlays = Number(configRow.value);
+  }
+
+  if (existing && existing.count >= maxPlays) {
     return NextResponse.json({ error: 'Daily limit reached' }, { status: 403 });
   }
 
