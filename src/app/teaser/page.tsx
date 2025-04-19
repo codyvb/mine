@@ -23,15 +23,15 @@ export default function TeaserPage() {
       <div className="flex flex-col items-center justify-center  p-8 max-w-xs w-full mx-auto">
         <div className="flex items-center justify-center rounded-2xl ">
           <Image
-            src="/icon.png"
+            src="/icon5.png"
             alt="Gems App Icon"
-            width={296}
-            height={296}
+            width={270}
+            height={270}
             className="rounded-2xl object-cover"
             priority
           />
         </div>
-        <span className="text-2xl  text-white tracking-tight text-center drop-shadow-lg select-none">
+        <span className="text-2xl mt-2 mb-4 text-white tracking-tight text-center drop-shadow-lg select-none">
           Gems
         </span>
         <hr className="w-[100px] border-t-1 border-dashed border-neutral-400 my-8 opacity-60" />
