@@ -192,26 +192,48 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
     }
 
     if (type === 'sent') {
-      // Transaction confirmation: "woosh" sending effect (longer, deeper up-chirp with air)
+      // Satisfying, definitive send/confirmation sound (not a laser)
       const ctxNow = ctx.currentTime;
-      // Main woosh: sine up-chirp
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
+      // 1. Percussive 'thunk' (low sine)
+      const osc1 = ctx.createOscillator();
+      const g1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(210, ctxNow);
+      osc1.frequency.linearRampToValueAtTime(110, ctxNow + 0.11);
+      g1.gain.setValueAtTime(0.32, ctxNow);
+      g1.gain.linearRampToValueAtTime(0.01, ctxNow + 0.13);
+      osc1.connect(g1).connect(ctx.destination);
+      osc1.start(ctxNow);
+      osc1.stop(ctxNow + 0.13);
+      // 2. Crisp snap (noise burst)
+      const bufferSize = ctx.sampleRate * 0.025;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.16, ctxNow);
+      // Highpass filter for snap
       const filter = ctx.createBiquadFilter();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, ctxNow);
-      osc.frequency.exponentialRampToValueAtTime(1800, ctxNow + 0.44);
-      g.gain.setValueAtTime(0.19, ctxNow);
-      g.gain.linearRampToValueAtTime(0.28, ctxNow + 0.10);
-      g.gain.linearRampToValueAtTime(0.01, ctxNow + 0.44);
       filter.type = 'highpass';
-      filter.frequency.setValueAtTime(200, ctxNow);
-      filter.frequency.linearRampToValueAtTime(1800, ctxNow + 0.44);
-      osc.connect(g);
-      g.connect(filter);
-      filter.connect(ctx.destination);
-      osc.start(ctxNow);
-      osc.stop(ctxNow + 0.45);
+      filter.frequency.setValueAtTime(900, ctxNow);
+      noise.connect(filter).connect(noiseGain).connect(ctx.destination);
+      noise.start(ctxNow + 0.01);
+      noise.stop(ctxNow + 0.045);
+      // 3. Subtle rising chime (triangle up-chirp, short)
+      const osc2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(600, ctxNow + 0.03);
+      osc2.frequency.linearRampToValueAtTime(950, ctxNow + 0.12);
+      g2.gain.setValueAtTime(0.12, ctxNow + 0.03);
+      g2.gain.linearRampToValueAtTime(0.01, ctxNow + 0.14);
+      osc2.connect(g2).connect(ctx.destination);
+      osc2.start(ctxNow + 0.03);
+      osc2.stop(ctxNow + 0.14);
     }
   };
   
