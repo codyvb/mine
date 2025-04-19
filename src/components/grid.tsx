@@ -730,8 +730,8 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         {/* Bottom section with auto height */}
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           {/* Cash out button */}
-          <div className="mb-3">
-            {mineHit ? (
+           <div className="mb-3">
+             {mineHit ? (
   <motion.button
     className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
     onClick={() => { playSound('please'); startNewRound(); }}
@@ -742,27 +742,35 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   </motion.button>
 ) : (
   revealedPositions.length > 0 ? (
-    <motion.button
-      className="bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-      onClick={handleCollect}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      Collect {safeRevealedCount} Gem{safeRevealedCount === 1 ? '' : 's'}
-    </motion.button>
+    <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
+      <span className="flex-1 text-white text-xl font-semibold text-center whitespace-nowrap">
+        {safeRevealedCount}/22
+      </span>
+      <motion.button
+        className="flex-[2] bg-green-700 hover:bg-green-600 py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center"
+        style={{ maxWidth: '100%' }}
+        onClick={handleCollect}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Collect Gems
+      </motion.button>
+    </div>
   ) : (
     <button
       className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
       style={{ height: '72px' }}
       disabled
-    ><div className="animate-pulse">
-      <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
-      </svg></div>
+    >
+      <div className="animate-pulse">
+        <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
+        </svg>
+      </div>
     </button>
   )
 )}
-          </div>
+           </div>
           
         </div>
       </div>
