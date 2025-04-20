@@ -5,7 +5,6 @@ import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 import { FarcasterProvider } from "../components/FarcasterContext";
 import Header from '../components/header';
-import Nav from '../components/Nav';
 
 export const metadata: Metadata = {
   title: "Gems",
@@ -19,7 +18,7 @@ export const metadata: Metadata = {
     title: "Gems",
     images: [
       {
-        url: "https://www.gems.rip/card.png",
+        url: "https://www.gems.rip/card2.png",
         width: 1200,
         height: 630,
         alt: "",
@@ -29,12 +28,12 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Gems",
-    images: ["https://www.gems.rip/card.png"],
+    images: ["https://www.gems.rip/card2.png"],
   },
   other: {
     'fc:frame': JSON.stringify({
       version: "next",
-      imageUrl: "https://www.gems.rip/card.png",
+      imageUrl: "https://www.gems.rip/card2.png",
       aspectRatio: "3:2",
       button: {
         title: "Launch Gems",
