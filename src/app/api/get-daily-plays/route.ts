@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getFidFromRequest } from '../../../lib/auth'; // Use relative path for API route
+import { DateTime } from "luxon";
 
 // Ensure env vars are present
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,23 +16,20 @@ export async function GET(req: Request): Promise<Response> {
   const fid = await getFidFromRequest(req);
   if (!fid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 1. Use the provided local time as the source of truth for all calculations.
-  // Update this to use an environment variable or request header in production. For now, hardcode for debugging:
-  const localTimeStr = '2025-04-21T00:56:14-06:00'; // <-- Replace with dynamic value in production
-  const localTime = new Date(localTimeStr);
+  // 1. Use Luxon to get the current time in America/Denver (DST-safe)
+  const nowDenver = DateTime.now().setZone('America/Denver');
 
-  // Calculate next reset: 12:00:00 PM on the same or next day, preserving the offset
-  const nextReset = new Date(localTime);
-  nextReset.setHours(12, 0, 0, 0);
-  if (localTime >= nextReset) {
+  // Calculate next reset: 12:00 PM today or tomorrow in Denver time
+  let nextResetDenver = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
+  if (nowDenver >= nextResetDenver) {
     // If after 12pm, set to 12pm tomorrow
-    nextReset.setDate(nextReset.getDate() + 1);
+    nextResetDenver = nextResetDenver.plus({ days: 1 });
   }
-  // The period is the date portion for today (for play tracking)
-  const period = localTime.toISOString().slice(0, 10);
+  // Use the date portion for today for play tracking (in Denver time)
+  const period = nowDenver.toISODate();
   // TEMP: Log for debugging
-  console.log('[get-daily-plays] localTime:', localTime.toISOString(), 'nextReset:', nextReset.toISOString());
-  // This logic ensures the reset is always at 12pm in the user's local offset (e.g., -06:00 for MDT).
+  console.log('[get-daily-plays] nowDenver:', nowDenver.toISO(), 'nextResetDenver:', nextResetDenver.toISO());
+  // This logic ensures the reset is always at 12pm in America/Denver time (handles DST automatically).
 
   // 2. Get user's play count from daily_plays for this period (same as start-game)
   const { data: existing, error: dailyPlaysError } = await supabase
@@ -63,10 +61,10 @@ export async function GET(req: Request): Promise<Response> {
 
   // 3. Return next communal reset (12pm Denver time daily)
   // nextResetDenver was already calculated above
-  // Use nextReset.toISOString() for both fields; this is 12pm in the user's local offset
+  // Use nextResetDenver in UTC for both fields; this is 12pm in Denver time (converted to UTC)
   return NextResponse.json({
     playsLeft,
-    nextReset: nextReset.toISOString(),
-    communalResetAt: nextReset.toISOString(),
+    nextReset: nextResetDenver.toUTC().toISO(),
+    communalResetAt: nextResetDenver.toUTC().toISO(),
   });
 }
