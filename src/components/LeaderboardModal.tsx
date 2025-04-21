@@ -24,7 +24,7 @@ const LeaderboardModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
   if (!isOpen) return null;
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80" onClick={onClose}>
-      <div className="bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-md mx-4 relative" onClick={e => e.stopPropagation()} style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', height: 520 }}>
+      <div className="bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-md mx-4 relative flex flex-col h-[80vh] min-h-[400px] max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute top-1.5 right-1.5 text-white text-lg font-bold p-1 hover:bg-neutral-800 rounded"
@@ -36,7 +36,7 @@ const LeaderboardModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
         {/* Activity feed scroll area */}
         <div
           ref={scrollRef}
-          style={{ maxHeight: 320, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+          className="flex-1 min-h-0 overflow-y-auto w-full"
         >
           <ActivityFeed />
         </div>

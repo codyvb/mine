@@ -11,7 +11,7 @@ export async function GET() {
   // Get latest 20 games with user info
   const { data, error } = await supabase
     .from('games')
-    .select('id, fid, started_at, mine_positions, revealed_positions, users:fid (username, display_name, pfp_url)')
+    .select('id, fid, started_at, ended_at, won, mine_positions, revealed_positions, users:fid (username, display_name, pfp_url)')
     .order('started_at', { ascending: false })
     .limit(20);
 
