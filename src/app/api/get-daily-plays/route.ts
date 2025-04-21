@@ -25,16 +25,19 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'Config not found' }, { status: 500 });
   }
   const resetAt = new Date(configRow.value);
+  const period = resetAt.toISOString().slice(0, 10);
 
-  // 2. Count user's games since reset
-  const { count: playCount, error: gamesError } = await supabase
-    .from('games')
-    .select('*', { count: 'exact', head: true })
+  // 2. Get user's play count from daily_plays for this period (same as start-game)
+  const { data: existing, error: dailyPlaysError } = await supabase
+    .from('daily_plays')
+    .select('count')
     .eq('fid', fid)
-    .gte('started_at', resetAt.toISOString());
-  if (gamesError) {
-    return NextResponse.json({ error: 'Failed to count plays' }, { status: 500 });
+    .eq('play_date', period)
+    .maybeSingle();
+  if (dailyPlaysError) {
+    return NextResponse.json({ error: 'Failed to get daily plays' }, { status: 500 });
   }
+  const playCount = existing?.count || 0;
   // Fetch maxPlays from config
   const { data: maxPlaysRow, error: maxPlaysError } = await supabase
     .from('config')
@@ -42,9 +45,14 @@ export async function GET(req: Request): Promise<Response> {
     .eq('key', 'max_plays')
     .maybeSingle();
   if (maxPlaysError || !maxPlaysRow) {
-    return NextResponse.json({ error: 'Config not found' }, { status: 500 });
+    return NextResponse.json({ error: 'Config for max_plays missing' }, { status: 500 });
   }
-  const maxPlays = parseInt(maxPlaysRow.value, 10) || 30;
+  // Only use config value for maxPlays. No fallback allowed.
+  // This is intentional, as we want to ensure that the config table is the single source of truth for maxPlays.
+  const maxPlays = parseInt(maxPlaysRow.value, 10);
+  if (isNaN(maxPlays)) {
+    return NextResponse.json({ error: 'Config for max_plays invalid' }, { status: 500 });
+  }
   const playsLeft = Math.max(0, maxPlays - (playCount || 0));
 
   // 3. Calculate next communal reset (assume daily at same UTC time)
