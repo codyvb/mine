@@ -601,7 +601,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
         <div className=" flex items-center h-full justify-center py-2">
-          <h1 className="text-2xl text-center">Find some gems</h1>
+          <h1 className="text-2xl text-center">Find some gems!!!!</h1>
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
@@ -815,7 +815,6 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         winAmount={modalWinAmount}
         isWin={modalIsWin}
         onTryAgain={handleTryAgain}
-        onShare={handleShareResult}
       />
     </div>
   );

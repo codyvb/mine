@@ -32,7 +32,7 @@ export default function TeaserPage() {
           />
         </div>
         <span className="text-2xl mt-2 mb-4 text-white tracking-tight text-center drop-shadow-lg select-none">
-          Gems
+          Gems!
         </span>
         <hr className="w-[100px] border-t-1 border-dashed border-neutral-400 my-8 opacity-60" />
         <a

@@ -1,6 +1,7 @@
 // GameModal.tsx
 import React from 'react';
 import { motion } from 'framer-motion';
+import { sdk } from '@farcaster/frame-sdk';
 
 interface GameModalProps {
   isOpen: boolean;
@@ -8,7 +9,6 @@ interface GameModalProps {
   winAmount?: number;
   isWin: boolean;
   onTryAgain: () => void;
-  onShare: () => void;
 }
 
 const GameModal: React.FC<GameModalProps> = ({
@@ -17,9 +17,17 @@ const GameModal: React.FC<GameModalProps> = ({
   winAmount = 0,
   isWin,
   onTryAgain,
-  onShare
 }) => {
   if (!isOpen) return null;
+
+  // Compose cast handler for share button
+  const handleShare = async () => {
+    try {
+      await sdk.actions.composeCast({ text: `I just won ${winAmount} $higher on Gems.` });
+    } catch (e) {
+      alert('Failed to open Farcaster compose.');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-opacity-70 flex items-center justify-center z-50">
@@ -79,7 +87,7 @@ const GameModal: React.FC<GameModalProps> = ({
           <div className="flex gap-4 w-full">
             <motion.button
               className="flex-1 bg-neutral-700 hover:bg-neutral-600 py-3 px-5 rounded-lg font-medium transition-colors"
-              onClick={onShare}
+              onClick={handleShare}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
