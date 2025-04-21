@@ -7,14 +7,14 @@ const AddAppButton: React.FC = () => {
   const [alreadyAdded, setAlreadyAdded] = useState<boolean | null>(null); // null = loading, true/false = checked
   const [status, setStatus] = useState<string | null>(null);
 
-  // Run check as early as possible, before rendering button
   useEffect(() => {
     let mounted = true;
     async function checkAdded() {
       if (typeof window !== "undefined" && sdk) {
         try {
           const context = await sdk.context;
-          if ((context as any)?.frameAdded) {
+          // Check both possible indicators for frame added
+          if ((context as any)?.frameAdded || (context as any)?.client?.added) {
             if (mounted) setAlreadyAdded(true);
             return;
           }
@@ -28,8 +28,23 @@ const AddAppButton: React.FC = () => {
         if (mounted) setAlreadyAdded(false);
       }
     }
+
+    function handleFrameAdded() {
+      setAlreadyAdded(true);
+    }
+    function handleFrameRemoved() {
+      setAlreadyAdded(false);
+    }
+
     checkAdded();
-    return () => { mounted = false; };
+    sdk.on?.("frameAdded", handleFrameAdded);
+    sdk.on?.("frameRemoved", handleFrameRemoved);
+
+    return () => {
+      mounted = false;
+      sdk.off?.("frameAdded", handleFrameAdded);
+      sdk.off?.("frameRemoved", handleFrameRemoved);
+    };
   }, []);
 
   // Do not render anything until we know if alreadyAdded
