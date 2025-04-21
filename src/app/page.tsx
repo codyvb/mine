@@ -1,6 +1,7 @@
 'use client';
 
 import App from "./app";
+import SaveFarcasterContext from "../components/SaveFarcasterContext";
 import { useRouter } from "next/navigation";
 import { useFarcaster } from "../components/FarcasterContext";
 
@@ -17,6 +18,10 @@ export default function Home() {
     return null;
   }
 
-  return <App />;
+  return <>
+    <SaveFarcasterContext />
+    <App />
+  </>;
+
 }
 
