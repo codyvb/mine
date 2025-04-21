@@ -23,7 +23,7 @@ export default function TeaserPage() {
       <div className="flex flex-col items-center justify-center  p-8 max-w-xs w-full mx-auto">
         <div className="flex items-center justify-center rounded-2xl ">
           <Image
-            src="/icon5.png"
+            src="/icon6.png"
             alt="Gems App Icon"
             width={270}
             height={270}
