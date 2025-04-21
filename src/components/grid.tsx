@@ -30,6 +30,7 @@ const MinesGame: React.FC = () => {
 
   // Keep track of tiles currently being processed to prevent race conditions
   const processingTilesRef = useRef<Set<number>>(new Set());
+  
   // Game constants
   const GRID_SIZE = 5;
   const MINE_COUNT = 3;
@@ -39,13 +40,13 @@ const MinesGame: React.FC = () => {
   const [minePositions, setMinePositions] = useState<number[]>([]);
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
-const gameOverRef = useRef(false);
+  const gameOverRef = useRef(false);
   const [gameWon, setGameWon] = useState(false);
   const [mineHit, setMineHit] = useState(false);
-  // --- REMOVE potentialWinnings state ---
-// const [potentialWinnings, setPotentialWinnings] = useState(0); // now tracks gems revealed
-// Instead, always derive the count below:
-const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx].isMine).length;
+  
+  // Always derive the count
+  const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx].isMine).length;
+  
   const [canCashOut, setCanCashOut] = useState(false);
   const [message, setMessage] = useState('Click on tiles to reveal them!');
   const [gameKey, setGameKey] = useState(0);
@@ -111,7 +112,6 @@ const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx
       
       // iOS Safari specific: play a silent sound to unlock audio
       playSilentSound();
-      
     } catch (e) {
       console.error("Could not create audio context:", e);
     }
@@ -134,8 +134,9 @@ const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx
   
   // Play sounds using a single audio context
   // type 'sent' is for transaction confirmation (bright, rising arpeggio)
-const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
-  if (gameOverRef.current && (type === 'press' || type === 'click')) return;
+  const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent') => {
+    if (gameOverRef.current && (type === 'press' || type === 'click')) return;
+    
     if (!audioInitializedRef.current) initAudio();
     const ctx = audioContextRef.current;
     if (!ctx) return;
@@ -159,6 +160,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       createOsc('square', 340, 0.07, 0.18);
       setTimeout(() => createOsc('triangle', 500, 0.05, 0.12), 35);
     }
+    
     if (type === 'click') {
       // Wallet coin "ding" – stacked soft triangle tones
       createOsc('triangle', 1046, 0.12); // C6
@@ -200,6 +202,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
     if (type === 'sent') {
       // Satisfying, definitive send/confirmation sound (not a laser)
       const ctxNow = ctx.currentTime;
+      
       // 1. Percussive 'thunk' (low sine)
       const osc1 = ctx.createOscillator();
       const g1 = ctx.createGain();
@@ -211,6 +214,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       osc1.connect(g1).connect(ctx.destination);
       osc1.start(ctxNow);
       osc1.stop(ctxNow + 0.13);
+      
       // 2. Crisp snap (noise burst)
       const bufferSize = ctx.sampleRate * 0.025;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -222,6 +226,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       noise.buffer = buffer;
       const noiseGain = ctx.createGain();
       noiseGain.gain.setValueAtTime(0.16, ctxNow);
+      
       // Highpass filter for snap
       const filter = ctx.createBiquadFilter();
       filter.type = 'highpass';
@@ -229,6 +234,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       noise.connect(filter).connect(noiseGain).connect(ctx.destination);
       noise.start(ctxNow + 0.01);
       noise.stop(ctxNow + 0.045);
+      
       // 3. Subtle rising chime (triangle up-chirp, short)
       const osc2 = ctx.createOscillator();
       const g2 = ctx.createGain();
@@ -243,27 +249,31 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
     }
   };
   
-  
   // Initialize the game
   useEffect(() => {
     // Only start a new round if user is connected
     if (isConnected && fid) {
       startNewRound();
     }
-    // Audio listeners, viewport, etc (unchanged)
+    
+    // Audio listeners, viewport, etc
     const handleUserInteraction = () => { initAudio(); };
     document.addEventListener('click', handleUserInteraction, { once: true });
     document.addEventListener('touchstart', handleUserInteraction, { once: true });
     document.addEventListener('keydown', handleUserInteraction, { once: true });
+    
     const meta = document.createElement('meta');
     meta.name = 'viewport';
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
     document.head.appendChild(meta);
+    
     const style = document.createElement('style');
     style.innerHTML = `html, body {height: 100%;overflow: hidden;position: fixed;width: 100%;}@supports (-webkit-touch-callout: none) {.safe-height {height: -webkit-fill-available;}}`;
     document.head.appendChild(style);
+    
     const preventScroll = (e: TouchEvent) => {e.preventDefault();};
     document.addEventListener('touchmove', preventScroll, { passive: false });
+    
     return () => {
       if (audioContextRef.current) audioContextRef.current.close().catch(e => console.error("Failed to close audio context:", e));
       document.removeEventListener('click', handleUserInteraction);
@@ -277,18 +287,20 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
 
   // Start a new round (server)
   const startNewRound = async () => {
-  gameOverRef.current = false;
-  processingTilesRef.current = new Set();
-  setMineHit(false);
-  setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
+    gameOverRef.current = false;
+    processingTilesRef.current = new Set();
+    setMineHit(false);
+    setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
 
     if (!fid) {
       setMessage("Connect to Farcaster to play!");
       setSupabaseStatus("Not connected to Farcaster");
       return;
     }
+    
     setIsLoadingGame(true);
     setSupabaseStatus("Connecting to Supabase...");
+    
     try {
       const res = await fetch("/api/start-game", {
         method: "POST",
@@ -297,14 +309,18 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
           "x-fid": String(fid),
         },
       });
+      
       const data = await res.json();
+      
       if (!res.ok) {
         setMessage(data.error || "Failed to start game");
         setSupabaseStatus(data.error || "Supabase error");
         setIsLoadingGame(false);
         return;
       }
+      
       setGameId(data.gameId);
+      
       // Initialize grid based on backend response
       const size = data.gridSize || 25;
       const newGrid = Array(size).fill(null).map((_, index) => ({
@@ -313,12 +329,12 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         isRevealed: (data.revealedPositions || []).includes(index),
         isAnimating: false
       }));
+      
       setGrid(newGrid);
       setRevealedPositions(data.revealedPositions || []);
       setMinePositions([]); // Hide mines until game over
       setGameOver(false);
       setGameWon(false);
-      // setPotentialWinnings(0); // removed, always derived.
       setCanCashOut(false);
       setMessage("Click on tiles to reveal them!");
       setClickedMineIndex(null);
@@ -331,29 +347,28 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       setIsLoadingGame(false);
     }
   };
-
-  
-  // No payout math needed for free-to-play gems game.
   
   // Handle tile click (server)
   const handleTileClick = async (index: number) => {
     // ABSOLUTELY NO SOUND if game is over (sync ref)
     if (gameOverRef.current) {
-  processingTilesRef.current.delete(index);
-  return;
-}
-    if (
-      revealedPositions.includes(index) ||
-      processingTilesRef.current.has(index)
-    ) return;
+      processingTilesRef.current.delete(index);
+      return;
+    }
+    
+    if (revealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
+    
     initAudio();
+    
     // Animation feedback only (no optimistic reveal)
     setGrid(prevGrid => prevGrid.map((tile, idx) =>
       idx === index ? { ...tile, isAnimating: true } : tile
     ));
+    
     // Only add to processingTilesRef AFTER all checks
     processingTilesRef.current.add(index);
     setMessage("Revealing...");
+    
     try {
       const res = await fetch("/api/reveal-cell", {
         method: "POST",
@@ -363,70 +378,77 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         },
         body: JSON.stringify({ gameId, cellIndex: index }),
       });
+      
       const data = await res.json();
+      
       if (!res.ok) {
         setMessage(data.error || "Failed to reveal cell");
         processingTilesRef.current.delete(index);
         return;
       }
-        // --- Merge revealed positions optimistically ---
-        setRevealedPositions(prev => Array.from(new Set([...prev, ...data.revealed])));
-        setGameOver(data.gameOver);
-        setGameWon(data.won);
-        setGrid(prevGrid => prevGrid.map((tile, idx) => {
-          // Always keep revealed if it was revealed locally or by server
-          const revealed = tile.isRevealed || data.revealed.includes(idx);
-          if (idx === index) {
-            return {
-              ...tile,
-              isAnimating: false,
-              isRevealed: revealed,
-              isMine: data.isMine ? true : tile.isMine
-            };
-          }
-          // If game over and mines need to be revealed
-          if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
-            return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
-          }
+      
+      // Merge revealed positions optimistically
+      setRevealedPositions(prev => Array.from(new Set([...prev, ...data.revealed])));
+      setGameOver(data.gameOver);
+      setGameWon(data.won);
+      
+      setGrid(prevGrid => prevGrid.map((tile, idx) => {
+        // Always keep revealed if it was revealed locally or by server
+        const revealed = tile.isRevealed || data.revealed.includes(idx);
+        
+        if (idx === index) {
           return {
             ...tile,
-            isRevealed: revealed
+            isAnimating: false,
+            isRevealed: revealed,
+            isMine: data.isMine ? true : tile.isMine
           };
-        }));
-        // Update gems after each safe reveal
-        if (!data.isMine && !data.gameOver) {
-          // setPotentialWinnings removed; always use derived safeRevealedCount.
         }
-        if (data.isMine) {
-          gameOverRef.current = true;
-          setGameOver(true);
-          setGameWon(false);
-          setMineHit(true);
-          setClickedMineIndex(index);
-          setMessage("Boom! You hit a mine.");
-          playSound('mine');
-          if (data.minePositions) {
-            setMinePositions(data.minePositions);
-          }
-          return;
-        } else {
-          setMessage("Safe! Keep going.");
-          playSound('click');
+        
+        // If game over and mines need to be revealed
+        if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
+          return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
         }
-        processingTilesRef.current.delete(index);
+        
+        return {
+          ...tile,
+          isRevealed: revealed
+        };
+      }));
+      
+      if (data.isMine) {
+        gameOverRef.current = true;
+        setGameOver(true);
+        setGameWon(false);
+        setMineHit(true);
+        setClickedMineIndex(index);
+        setMessage("Boom! You hit a mine.");
+        playSound('mine');
+        
+        if (data.minePositions) {
+          setMinePositions(data.minePositions);
+        }
+        return;
+      } else {
+        setMessage("Safe! Keep going.");
+        playSound('click');
+      }
+      
+      processingTilesRef.current.delete(index);
     } catch (e) {
       setMessage("Could not connect to server.");
       setSupabaseStatus("Could not connect to Supabase");
       processingTilesRef.current.delete(index);
     }
   };
-
   
   // Handle cash out (server)
   const handleCashOut = async () => {
     if (!fid || !gameId || !canCashOut || gameOver) return;
+    
     initAudio();
     setMessage("Cashing out...");
+    
     try {
       const res = await fetch("/api/cash-out", {
         method: "POST",
@@ -436,12 +458,15 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         },
         body: JSON.stringify({ gameId }),
       });
+      
       const data = await res.json();
+      
       if (!res.ok) {
         setMessage(data.error || "Failed to cash out");
         setSupabaseStatus(data.error || "Supabase error");
         return;
       }
+      
       setGameOver(true);
       setGameWon(true);
       setMinePositions(data.minePositions);
@@ -455,7 +480,6 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       setSupabaseStatus("Could not connect to Supabase");
     }
   };
-
   
   // Modal button handlers
   const handleShareResult = () => {
@@ -467,10 +491,10 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   };
 
   const handleTryAgain = () => {
-  gameOverRef.current = false;
-  processingTilesRef.current = new Set();
-  setMineHit(false);
-  setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
+    gameOverRef.current = false;
+    processingTilesRef.current = new Set();
+    setMineHit(false);
+    setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
 
     playSound('please');
     setModalOpen(false);
@@ -492,18 +516,25 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   useEffect(() => {
     setModalManuallyClosed(false);
   }, [gameKey]);
-
-  // Dummy functions for the bottom buttons
   
   // Handle Collect (secure, server verified)
-  const [tokenToast, setTokenToast] = useState<{ loading: boolean; hash?: string; amount?: number; to?: string; error?: string | null } | null>(null);
+  const [tokenToast, setTokenToast] = useState<{ 
+    loading: boolean; 
+    hash?: string; 
+    amount?: number; 
+    to?: string; 
+    error?: string | null 
+  } | null>(null);
+  
   // Store the server-verified amount for the toast
   const [verifiedTokenAmount, setVerifiedTokenAmount] = useState<number | null>(null);
+  
   const handleCollect = async () => {
-  // Allow collect if player hasn't lost and has revealed at least one tile
-  if (gameOver && !gameWon) return;
-  if (mineHit) return;
-  if (revealedPositions.length === 0 || !fid || !gameId) return;
+    // Allow collect if player hasn't lost and has revealed at least one tile
+    if (gameOver && !gameWon) return;
+    if (mineHit) return;
+    if (revealedPositions.length === 0 || !fid || !gameId) return;
+    
     // Open congrats modal immediately, but only ONCE per round
     if (!modalOpen && !modalManuallyClosed) {
       setGameOver(true);
@@ -517,8 +548,10 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
       setModalIsWin(true);
       setModalWinAmount(safeRevealedCount);
     }
+    
     playSound('cash'); // Play success sound immediately when user collects
     setTokenToast({ loading: true });
+    
     try {
       // 1. Call /api/cash-out to finalize the game and get verified winnings
       const cashRes = await fetch("/api/cash-out", {
@@ -529,14 +562,18 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         },
         body: JSON.stringify({ gameId }),
       });
+      
       const cashData = await cashRes.json();
+      
       if (!cashRes.ok) {
         setTokenToast({ loading: false, error: cashData.error || "Failed to cash out" });
         return;
       }
+      
       // Server will have validated and ended the game, and we can trust the revealed count
       const verifiedAmount = cashData.revealed?.length || 0;
-      setVerifiedTokenAmount(verifiedAmount); // <-- Save for use in toast
+      setVerifiedTokenAmount(verifiedAmount); // Save for use in toast
+      
       // 2. Call /api/send-token with only the FID; backend will securely determine the amount
       const sendRes = await fetch("/api/send-token", {
         method: "POST",
@@ -545,11 +582,14 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
           "x-fid": String(fid),
         },
       });
+      
       const sendData = await sendRes.json();
+      
       if (!sendRes.ok) {
         setTokenToast({ loading: false, error: sendData.error || "Failed to send token" });
         return;
       }
+      
       // Show the toast with tx info (address, amount, hash)
       setTokenToast({
         loading: false,
@@ -558,11 +598,9 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         to: sendData.to || '', // backend should return recipient address if possible
         error: null,
       });
+      
       playSound('sent'); // Play transaction confirmation sound
-      // DO NOT update game state here! Only the toast and sound.
-      // All game state is set at collect/cash-out time above.
-      // NO setGameOver, setGameWon, setModalIsWin, setModalWinAmount, setModalOpen, or setMessage here!
-      // playSound('cash') REMOVED from here
+      // All game state is set at collect/cash-out time above
     } catch (e: any) {
       setTokenToast({ loading: false, error: e.message || "Unknown error" });
     }
@@ -596,16 +634,16 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
   }
 
   return (
-    <div className="flex flex-col h-full w-full text-white justify-center  inset-0 safe-height">
+    <div className="flex flex-col h-full w-full text-white justify-center inset-0 safe-height">
       {/* Main container with fixed proportions */}
       <div className="flex flex-col h-[calc(100%-60px)] justify-between">
         {/* Top section - using relative size for mobile */}
-        <div className=" flex items-center h-full justify-center py-2">
-          <h1 className="text-2xl text-center">Find some gems!!!!</h1>
+        <div className="flex items-center h-full justify-center py-2">
+          <h1 className="text-2xl text-center">Find some Gems</h1>
         </div>
         
         {/* Grid section - centered with dynamic sizing */}
-        <div className="flex items-center justify-center px-4 py-2 flex-grow ">
+        <div className="flex items-center justify-center px-4 py-2 flex-grow">
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
             {grid.map((tile, index) => {
               // Determine if this tile is:
@@ -613,115 +651,106 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
               const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
               // 2. Another mine that should be shown at reduced opacity when game is over
               const isOtherMine = tile.isMine && gameOver && index !== clickedMineIndex;
-               // 3. A safe tile that was clicked before game over
-               const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
-               // 4. A regular unrevealed tile
-               const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
+              // 3. A safe tile that was clicked before game over
+              const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
+              // 4. A regular unrevealed tile
+              const isUnrevealed = !isClickedMine && !isOtherMine && !isSafeTileRevealed;
+              // 5. Is this an unrevealed safe tile at game over?
+              const isUnrevealedSafe = gameOver && !tile.isMine && !revealedPositions.includes(index);
 
-               // New: Is this an unrevealed safe tile at game over?
-               const isUnrevealedSafe = gameOver && !tile.isMine && !revealedPositions.includes(index);
-
-               // Set opacity for different scenarios
-               let opacity = 1; // Default full opacity
-               if (gameOver) {
-                 if (isClickedMine || isSafeTileRevealed) {
-                   opacity = 1;
-                 } else if (isUnrevealedSafe) {
-                   opacity = 0.7;
-                 } else {
-                   // Reduced opacity for other mines and unrevealed tiles
-                   opacity = 0.5;
-                 }
-               }
+              // Set opacity for different scenarios
+              let opacity = 1; // Default full opacity
+              if (gameOver) {
+                if (isClickedMine || isSafeTileRevealed) {
+                  opacity = 1;
+                } else if (isUnrevealedSafe) {
+                  opacity = 0.7;
+                } else {
+                  // Reduced opacity for other mines and unrevealed tiles
+                  opacity = 0.5;
+                }
+              }
+              
               return (
                 <motion.button
-  key={`${gameKey}-${index}`}
-  onClick={() => {
-    playSound('press');
-    handleTileClick(index);
-  }}
-  className={
-    `aspect-square w-full h-full flex items-center justify-center font-bold relative`
-  }
-  style={{
-    touchAction: 'none',
-    opacity,
-    padding: 0,
-    border: 'none',
-    backgroundColor:
-      isSafeTileRevealed || isClickedMine || isOtherMine
-        ? 'transparent'
-        : tile.isAnimating
-        ? '#4b5563' // lighter during press (gray-600)
-        : '#374151', // default (gray-700)
-    borderRadius:
-      isSafeTileRevealed ? '9999px' : '0.5rem',
-    boxShadow:
-      (!isSafeTileRevealed && !isClickedMine && !isOtherMine)
-        ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
-        : undefined,
-  }}
-  // Idle tease animation props removed
->
-  {/* TOKEN REVEAL */}
-  {isSafeTileRevealed && (
-    <motion.div
-      initial={{ scale: 0.5, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{
-        duration: 0.4,
-        ease: [0.34, 1.56, 0.64, 1],
-      }}
-      className="absolute inset-0"
-      style={{
-        borderRadius: '9999px',
-        backgroundImage: 'url(/tokens/horse.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    />
-  )}
+                  key={`${gameKey}-${index}`}
+                  onClick={() => {
+                    playSound('press');
+                    handleTileClick(index);
+                  }}
+                  className={`aspect-square w-full h-full flex items-center justify-center font-bold relative`}
+                  style={{
+                    touchAction: 'none',
+                    opacity,
+                    padding: 0,
+                    border: 'none',
+                    backgroundColor:
+                      isSafeTileRevealed || isClickedMine || isOtherMine
+                        ? 'transparent'
+                        : tile.isAnimating
+                        ? '#4b5563' // lighter during press (gray-600)
+                        : '#374151', // default (gray-700)
+                    borderRadius:
+                      isSafeTileRevealed ? '9999px' : '0.5rem',
+                    boxShadow:
+                      (!isSafeTileRevealed && !isClickedMine && !isOtherMine)
+                        ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
+                        : undefined,
+                  }}
+                >
+                  {/* TOKEN REVEAL */}
+                  {isSafeTileRevealed && (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        duration: 0.4,
+                        ease: [0.34, 1.56, 0.64, 1],
+                      }}
+                      className="absolute inset-0"
+                      style={{
+                        borderRadius: '9999px',
+                        backgroundImage: 'url(/tokens/horse.png)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
+                    />
+                  )}
 
-  {/* UNREVEALED SAFE TILE (show at 70% opacity) */}
-  {isUnrevealedSafe && (
-    <div
-      className="absolute inset-0"
-      style={{
-        borderRadius: '9999px',
-        backgroundImage: 'url(/tokens/horse.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        opacity: 0.3,
-      }}
-    />
-  )}
-  {(isClickedMine || isOtherMine) && (
-    <motion.div
-      initial={{ scale: 0.5, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{
-        duration: 0.4,
-        ease: [0.34, 1.56, 0.64, 1],
-      }}
-      className="absolute inset-0 flex items-center justify-center text-2xl"
-      style={{
-        borderRadius: '0.5rem',
-        backgroundColor: '#b91c1c', // red-700
-        color: 'white',
-      }}
-    >
-      💣
-    </motion.div>
-  )}
-</motion.button>
-
-
-
-
-
-
-
-
+                  {/* UNREVEALED SAFE TILE (show at 70% opacity) */}
+                  {isUnrevealedSafe && (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        borderRadius: '9999px',
+                        backgroundImage: 'url(/tokens/horse.png)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        opacity: 0.3,
+                      }}
+                    />
+                  )}
+                  
+                  {/* MINE TILE REVEAL */}
+                  {(isClickedMine || isOtherMine) && (
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        duration: 0.4,
+                        ease: [0.34, 1.56, 0.64, 1],
+                      }}
+                      className="absolute inset-0 flex items-center justify-center text-2xl"
+                      style={{
+                        borderRadius: '0.5rem',
+                        backgroundColor: '#b91c1c', // red-700
+                        color: 'white',
+                      }}
+                    >
+                      💣
+                    </motion.div>
+                  )}
+                </motion.button>
               );
             })}
           </div>
@@ -730,65 +759,63 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
         {/* Bottom section with auto height */}
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           {/* Cash out button */}
-           <div className="mb-3">
-             {mineHit ? (
-  <motion.button
-    className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-    onClick={() => { playSound('please'); startNewRound(); }}
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-  >
-    Try Again ({tries} tries left)
-  </motion.button>
-) : (
-  revealedPositions.length > 0 ? (
-    <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
-      <span className="flex-1 text-white text-xl font-semibold text-center whitespace-nowrap">
-        {safeRevealedCount}/22
-      </span>
-      <motion.button
-        key={`collect-gems-${gameKey}-${safeRevealedCount}`}
-        className={[
-          'flex-[2] py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center',
-          safeRevealedCount < 4
-            ? 'bg-green-700 text-white saturate-75 hover:bg-green-600'
-            : safeRevealedCount < 10
-            ? 'bg-green-600 text-white saturate-100 hover:bg-green-500'
-            : safeRevealedCount < 15
-            ? 'bg-green-500 text-white saturate-150 ring-2 ring-green-300 font-extrabold scale-100 hover:bg-green-400'
-            : 'bg-emerald-400 text-white saturate-200 ring-4 ring-green-300 font-extrabold scale-105 hover:bg-emerald-300',
-        ].join(' ')}
-        style={{
-          maxWidth: '100%',
-          filter: safeRevealedCount < 4 ? 'saturate(0.8) brightness(1)' : safeRevealedCount > 12 ? 'drop-shadow(0 0 16px #34d399)' : undefined,
-          boxShadow: safeRevealedCount > 9 ? '0 0 16px 2px #6ee7b7' : undefined,
-          transition: 'all 0.3s cubic-bezier(.4,2,.6,1)',
-        }}
-        onClick={handleCollect}
-        whileHover={{ scale: safeRevealedCount > 3 ? 1.07 : 1.01 }}
-        whileTap={{ scale: 0.97 }}
-
-        disabled={safeRevealedCount < 1}
-      >
-        Collect Gems
-      </motion.button>
-    </div>
-  ) : (
-    <button
-      className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
-      style={{ height: '72px' }}
-      disabled
-    >
-      <div className="animate-pulse">
-        <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
-        </svg>
-      </div>
-    </button>
-  )
-)}
-           </div>
-          
+          <div className="mb-3">
+            {mineHit ? (
+              <motion.button
+                className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
+                onClick={() => { playSound('please'); startNewRound(); }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Try Again ({tries} tries left)
+              </motion.button>
+            ) : (
+              revealedPositions.length > 0 ? (
+                <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
+                  <span className="flex-1 text-white text-xl font-semibold text-center whitespace-nowrap">
+                    {safeRevealedCount}/22
+                  </span>
+                  <motion.button
+                    key={`collect-gems-${gameKey}-${safeRevealedCount}`}
+                    className={[
+                      'flex-[2] py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center',
+                      safeRevealedCount < 4
+                        ? 'bg-green-700 text-white saturate-75 hover:bg-green-600'
+                        : safeRevealedCount < 10
+                        ? 'bg-green-600 text-white saturate-100 hover:bg-green-500'
+                        : safeRevealedCount < 15
+                        ? 'bg-green-500 text-white saturate-150 ring-2 ring-green-300 font-extrabold scale-100 hover:bg-green-400'
+                        : 'bg-emerald-400 text-white saturate-200 ring-4 ring-green-300 font-extrabold scale-105 hover:bg-emerald-300',
+                    ].join(' ')}
+                    style={{
+                      maxWidth: '100%',
+                      filter: safeRevealedCount < 4 ? 'saturate(0.8) brightness(1)' : safeRevealedCount > 12 ? 'drop-shadow(0 0 16px #34d399)' : undefined,
+                      boxShadow: safeRevealedCount > 9 ? '0 0 16px 2px #6ee7b7' : undefined,
+                      transition: 'all 0.3s cubic-bezier(.4,2,.6,1)',
+                    }}
+                    onClick={handleCollect}
+                    whileHover={{ scale: safeRevealedCount > 3 ? 1.07 : 1.01 }}
+                    whileTap={{ scale: 0.97 }}
+                    disabled={safeRevealedCount < 1}
+                  >
+                    Collect Gems
+                  </motion.button>
+                </div>
+              ) : (
+                <button
+                  className="bg-transparent py-6 px-6 rounded-lg font-bold w-full mx-auto flex flex-col items-center justify-center cursor-not-allowed text-center"
+                  style={{ height: '72px' }}
+                  disabled
+                >
+                  <div className="animate-pulse">
+                    <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
+                    </svg>
+                  </div>
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
       
@@ -808,6 +835,7 @@ const playSound = (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent'
           onClose={() => setTokenToast(null)}
         />
       )}
+      
       {/* Modal component */}
       <GameModal 
         isOpen={modalOpen}

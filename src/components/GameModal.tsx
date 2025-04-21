@@ -23,7 +23,7 @@ const GameModal: React.FC<GameModalProps> = ({
   // Compose cast handler for share button
   const handleShare = async () => {
     try {
-      await sdk.actions.composeCast({ text: `I just won ${winAmount} $higher on Gems.` });
+      await sdk.actions.composeCast({ text: `I just won ${winAmount} $fathorse on gems.rip` });
     } catch (e) {
       alert('Failed to open Farcaster compose.');
     }
@@ -63,7 +63,7 @@ const GameModal: React.FC<GameModalProps> = ({
               </motion.div>
               <h2 className="text-2xl font-bold text-center mb-2">Congrats!</h2>
               <p className="text-center text-xl mb-6">
-                You won <span className="text-green-500 font-bold">{winAmount}</span> $higher tokens
+                You won <span className="text-green-500 font-bold">{winAmount}</span> $fathorse tokens
               </p>
             </>
           ) : (
