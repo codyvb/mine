@@ -63,29 +63,41 @@ const MinesGame: React.FC = () => {
   // Fetch tries from context
   const fetchTriesLeft = fetchTries;
 
-  // Load Farcaster context
+  // Load Farcaster context and fetch tries only after FID is set
   useEffect(() => {
+    let cancelled = false;
     const loadFarcasterUser = async () => {
       try {
         const context = await sdk.context;
-        setFid(context?.user?.fid || null);
-        setIsConnected(!!context?.user?.fid);
-        fetchTriesLeft(context?.user?.fid || null);
+        const fetchedFid = context?.user?.fid || null;
+        setFid(fetchedFid);
+        setIsConnected(!!fetchedFid);
+        if (fetchedFid && !cancelled) {
+          await fetchTriesLeft(fetchedFid);
+        }
       } catch (e) {
         setFid(null);
         setIsConnected(false);
       } finally {
-        setIsUILoading(false); // Mark UI as loaded after async/game state is ready
+        if (!cancelled) setIsUILoading(false);
       }
     };
     loadFarcasterUser();
+    return () => { cancelled = true; };
   }, []);
 
-  // Refetch triesLeft after each round
+  // Refetch triesLeft after each round if FID changes or gameKey changes
   useEffect(() => {
     if (fid) fetchTriesLeft(fid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameKey]);
+  }, [fid, gameKey]);
+
+  // If FID becomes available after initial mount, fetch tries
+  useEffect(() => {
+    if (fid && tries === null && !isUILoading) {
+      fetchTriesLeft(fid);
+    }
+  }, [fid, tries, isUILoading]);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -608,6 +620,7 @@ const MinesGame: React.FC = () => {
   } // <-- This closes handleCollect
 
   // Main render
+  console.log('DEBUG tries:', tries, 'fid:', fid);
   let mainContent: React.ReactNode;
   if (isUILoading) {
     mainContent = (
@@ -622,6 +635,22 @@ const MinesGame: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+    );
+  } else if (fid === null) {
+    mainContent = (
+      <div className="flex flex-col h-full w-full justify-center items-center">
+        <div className="text-center text-lg text-neutral-300">Unable to fetch Farcaster user. Please refresh or try again.</div>
+      </div>
+    );
+  } else if (tries === null) {
+    mainContent = (
+      <div className="flex flex-col h-full w-full justify-center items-center">
+        <div className="text-center text-lg text-neutral-300">Loading your available tries...</div>
+        <button
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+          onClick={() => fid && fetchTriesLeft(fid)}
+        >Retry</button>
       </div>
     );
   } else if (tries === 0) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getFidFromRequest } from '../../../lib/auth'; // Use relative path for API route
+import { DateTime } from "luxon";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,20 +21,14 @@ export async function POST(req: Request) {
     .maybeSingle();
   const maxPlays = maxPlaysRow && !isNaN(Number(maxPlaysRow.value)) ? Number(maxPlaysRow.value) : 10;
 
-  // --- 3. Calculate current MST time and daily period ---
-  const nowUtc = new Date();
-  const nowMST = new Date(nowUtc.getTime() - 7 * 60 * 60 * 1000);
-  // Find most recent 12pm MST
-  const resetMST = new Date(nowMST);
-  resetMST.setHours(12, 0, 0, 0);
-  if (nowMST < resetMST) {
-    resetMST.setDate(resetMST.getDate() - 1);
+  // --- 3. Calculate current Denver/local time and daily period (DST-safe) ---
+  const nowDenver = DateTime.now().setZone('America/Denver');
+  const period = nowDenver.toISODate(); // YYYY-MM-DD, DST-safe and matches get-daily-plays
+  // Optionally, calculate next reset for frontend (12pm Denver)
+  let nextResetDenver = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
+  if (nowDenver >= nextResetDenver) {
+    nextResetDenver = nextResetDenver.plus({ days: 1 });
   }
-  const period = resetMST.toISOString().slice(0, 10);
-  // Optionally, calculate next reset for frontend
-  const nextResetMST = new Date(resetMST);
-  nextResetMST.setDate(resetMST.getDate() + 1);
-  nextResetMST.setHours(12, 0, 0, 0);
 
 
   // --- 7. Upsert user (for FK constraint) ---

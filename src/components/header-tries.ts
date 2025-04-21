@@ -14,7 +14,7 @@ export function useTriesLeft(fid: number | null) {
 
     async function fetchTries() {
       try {
-        const res = await fetch('/api/get-daily-plays');
+        const res = await fetch('/api/get-daily-plays', { headers: { 'x-fid': String(fid) } });
         const data = await res.json();
         if (!cancelled && res.ok && typeof data.playsLeft === 'number') {
           setTriesLeft(data.playsLeft);
