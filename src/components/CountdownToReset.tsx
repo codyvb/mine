@@ -4,17 +4,31 @@ import sdk, { AddFrame } from "@farcaster/frame-sdk";
 
 const AddAppButton: React.FC = () => {
   const [canAdd, setCanAdd] = useState(false);
+  const [alreadyAdded, setAlreadyAdded] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for sdk.actions.addFrame availability
-    if (
-      typeof window !== "undefined" &&
-      sdk &&
-      typeof sdk.actions?.addFrame === "function"
-    ) {
-      setCanAdd(true);
+    let mounted = true;
+    async function checkAdded() {
+      if (typeof window !== "undefined" && sdk) {
+        // Check if the app is already added (frameAdded in sdk.context)
+        try {
+          const context = await sdk.context;
+          if ((context as any)?.frameAdded) {
+            if (mounted) setAlreadyAdded(true);
+          }
+          // TODO: Update this check if Farcaster Miniapps SDK exposes an official property for 'already added'.
+        } catch {}
+        if (
+          sdk &&
+          typeof sdk.actions?.addFrame === "function"
+        ) {
+          if (mounted) setCanAdd(true);
+        }
+      }
     }
+    checkAdded();
+    return () => { mounted = false; };
   }, []);
 
   const handleAdd = async () => {
@@ -22,6 +36,7 @@ const AddAppButton: React.FC = () => {
     try {
       await sdk.actions.addFrame();
       setStatus("App added successfully!");
+      setAlreadyAdded(true); // Hide button after successful add if context is not updated immediately
     } catch (error: any) {
       if (error instanceof AddFrame.RejectedByUser) {
         // Do not set any status so user can try again
@@ -32,6 +47,8 @@ const AddAppButton: React.FC = () => {
       }
     }
   };
+
+  if (alreadyAdded) return null;
 
   return (
     <div className="flex flex-col items-center">
@@ -57,10 +74,12 @@ interface CountdownToResetProps {
   onReset?: () => void;
 }
 
+// Always treat nextReset as a UTC ISO string from the backend. Never convert to local time.
 function getTimeLeft(nextReset: string | null): { hours: number; minutes: number; seconds: number } {
   if (!nextReset) return { hours: 0, minutes: 0, seconds: 0 };
-  const reset = new Date(nextReset).getTime();
-  const now = Date.now();
+  // Parse as UTC, compare to UTC now
+  const reset = Date.parse(nextReset); // Date.parse always interprets Z as UTC
+  const now = Date.now(); // always UTC
   let diff = Math.max(0, Math.floor((reset - now) / 1000));
   const hours = Math.floor(diff / 3600);
   diff -= hours * 3600;
