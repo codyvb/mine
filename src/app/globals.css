@@ -22,14 +22,26 @@ body {
   font-family: 'Inter', Helvetica, Arial, sans-serif;
 }
 
+/*
 * {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;  Firefox 
+  -ms-overflow-style: none;  IE and Edge 
 }
 
 *::-webkit-scrollbar {
   display: none;
 }
+*/
+
+/* Optional: hide scrollbars only for modal scroll areas */
+.modal-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.modal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 
 @layer base {
   :root {
