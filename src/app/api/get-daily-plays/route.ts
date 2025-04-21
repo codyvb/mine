@@ -15,20 +15,26 @@ export async function GET(req: Request): Promise<Response> {
   const fid = await getFidFromRequest(req);
   if (!fid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 1. Calculate current MST time and daily period (no config needed)
+  // 1. Calculate current Denver (America/Denver) time and daily period (handles DST)
   const nowUtc = new Date();
-  const nowMST = new Date(nowUtc.getTime() - 7 * 60 * 60 * 1000);
-  // Find most recent 12pm MST
-  const resetMST = new Date(nowMST);
-  resetMST.setHours(12, 0, 0, 0);
-  if (nowMST < resetMST) {
-    resetMST.setDate(resetMST.getDate() - 1);
+  // Get the current time in America/Denver (handles DST)
+  const nowDenverStr = nowUtc.toLocaleString('en-US', { timeZone: 'America/Denver' });
+  const nowDenver = new Date(nowDenverStr);
+  // Find most recent 12pm in Denver time
+  const resetDenver = new Date(nowDenver);
+  resetDenver.setHours(12, 0, 0, 0);
+  if (nowDenver < resetDenver) {
+    resetDenver.setDate(resetDenver.getDate() - 1);
   }
-  const period = resetMST.toISOString().slice(0, 10);
-  // Optionally, calculate next reset for frontend
-  const nextResetMST = new Date(resetMST);
-  nextResetMST.setDate(resetMST.getDate() + 1);
-  nextResetMST.setHours(12, 0, 0, 0);
+  const period = resetDenver.toISOString().slice(0, 10);
+  // Calculate next reset for frontend (12pm next day in Denver time)
+  const nextResetDenver = new Date(resetDenver);
+  nextResetDenver.setDate(resetDenver.getDate() + 1);
+  nextResetDenver.setHours(12, 0, 0, 0);
+  // TEMP: Log for debugging
+  console.log('[get-daily-plays] nowUtc:', nowUtc.toISOString(), 'nowDenver:', nowDenver.toISOString(), 'nextResetDenver:', nextResetDenver.toISOString());
+  // Note: This logic ensures the reset is always at 12pm local Denver time, which is MST or MDT depending on the date.
+
 
   // 2. Get user's play count from daily_plays for this period (same as start-game)
   const { data: existing, error: dailyPlaysError } = await supabase
@@ -58,11 +64,11 @@ export async function GET(req: Request): Promise<Response> {
   }
   const playsLeft = Math.max(0, maxPlays - (playCount || 0));
 
-  // 3. Return next communal reset (12pm MST daily)
-  // nextResetMST was already calculated above
+  // 3. Return next communal reset (12pm Denver time daily)
+  // nextResetDenver was already calculated above
   return NextResponse.json({
     playsLeft,
-    nextReset: nextResetMST.toISOString(),
-    communalResetAt: nextResetMST.toISOString(),
+    nextReset: nextResetDenver.toISOString(),
+    communalResetAt: nextResetDenver.toISOString(),
   });
 }
