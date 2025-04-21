@@ -1,5 +1,58 @@
 import React, { useEffect, useState } from "react";
 
+import sdk, { AddFrame } from "@farcaster/frame-sdk";
+
+const AddAppButton: React.FC = () => {
+  const [canAdd, setCanAdd] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for sdk.actions.addFrame availability
+    if (
+      typeof window !== "undefined" &&
+      sdk &&
+      typeof sdk.actions?.addFrame === "function"
+    ) {
+      setCanAdd(true);
+    }
+  }, []);
+
+  const handleAdd = async () => {
+    setStatus(null);
+    if (!canAdd) return;
+    try {
+      await sdk.actions.addFrame();
+      setStatus("App added successfully!");
+    } catch (error: any) {
+      if (error instanceof AddFrame.RejectedByUser) {
+        setStatus("User rejected adding the app.");
+      } else if (error instanceof AddFrame.InvalidDomainManifest) {
+        setStatus("Invalid domain manifest. Cannot add app.");
+      } else {
+        setStatus("Failed to add app.");
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <button
+        className="mt-2 px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg shadow-lg border border-indigo-800 pointer-events-auto transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+        onClick={handleAdd}
+        disabled={!canAdd}
+        title={canAdd ? "Add this app to Farcaster" : "Not supported in this environment"}
+        type="button"
+      >
+        Add App
+      </button>
+      {status && (
+        <span className="mt-2 text-sm text-neutral-300 text-center">{status}</span>
+      )}
+    </div>
+  );
+};
+
+
 interface CountdownToResetProps {
   nextReset: string | null;
   onReset?: () => void;
@@ -38,20 +91,30 @@ const CountdownToReset: React.FC<CountdownToResetProps> = ({ nextReset, onReset 
 
   const { hours, minutes, seconds } = timeLeft;
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg text-white  text-lg w-full mx-auto">
-      {/* 5x5 grid of tiles */}
-      <div className=" flex items-center mb-3 h-full justify-center py-2">
-          <h1 className="text-2xl font-mono text-center">out of tries</h1>
-        </div>
-      <div className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square mb-4">
-        {[...Array(25)].map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square w-full h-full bg-neutral-800 rounded-lg border border-neutral-700"
-          />
-        ))}
+    <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg text-white text-lg w-full mx-auto">
+      {/* Out of tries message at the top */}
+      <div className="flex items-center mb-3 h-full justify-center py-2 w-full">
+        <h1 className="text-2xl font-mono text-center w-full">out of tries</h1>
       </div>
-      <span className="mt-3 text-xl font-normal text-neutral-300">Next play in {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}</span>
+      {/* 5x5 grid of tiles with floating timer */}
+      <div className="relative w-full max-w-[90vw] aspect-square mb-4">
+        {/* Floating timer centered over grid */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+          <span className="bg-black/70 px-4 py-2 rounded-xl text-2xl font-semibold text-white shadow-lg border border-neutral-700 mb-4 pointer-events-auto">
+            Next play in {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
+          </span>
+          {/* Add App Button below timer */}
+          <AddAppButton />
+        </div>
+        <div className="grid grid-cols-5 gap-2 w-full h-full">
+          {[...Array(25)].map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square w-full h-full bg-neutral-800 rounded-lg border border-neutral-700"
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

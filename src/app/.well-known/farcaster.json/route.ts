@@ -1,5 +1,5 @@
 export async function GET() {
-  const appUrl = "https://gems.rip"  ;
+  const appUrl = "https://www.gems.rip"  ;
 
   const config = {
     accountAssociation: {
