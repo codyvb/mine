@@ -485,7 +485,7 @@ const MinesGame: React.FC = () => {
       setMinePositions(data.minePositions);
       setRevealedPositions(data.revealed);
       setModalIsWin(true);
-      setModalWinAmount(safeRevealedCount); // now gem count
+      setModalWinAmount(data.revealed?.length || 0); // Use backend-verified amount for modal
       setMessage("You cashed out!");
       playSound('cash');
     } catch (e) {
@@ -586,6 +586,9 @@ const MinesGame: React.FC = () => {
       // Server will have validated and ended the game, and we can trust the revealed count
       const verifiedAmount = cashData.revealed?.length || 0;
       setVerifiedTokenAmount(verifiedAmount); // Save for use in toast
+      setModalWinAmount(verifiedAmount); // <-- Always show backend-verified amount in modal
+      // If modal is not open, open it now (should already be open, but for safety)
+      if (!modalOpen) setModalOpen(true);
       
       // 2. Call /api/send-token with only the FID; backend will securely determine the amount
       const sendRes = await fetch("/api/send-token", {
