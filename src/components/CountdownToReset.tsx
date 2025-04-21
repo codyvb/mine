@@ -25,7 +25,7 @@ const AddAppButton: React.FC = () => {
       setStatus("App added successfully!");
     } catch (error: any) {
       if (error instanceof AddFrame.RejectedByUser) {
-        setStatus("User rejected adding the app.");
+        // Do not set any status so user can try again
       } else if (error instanceof AddFrame.InvalidDomainManifest) {
         setStatus("Invalid domain manifest. Cannot add app.");
       } else {
