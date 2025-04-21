@@ -18,7 +18,6 @@ const AddAppButton: React.FC = () => {
   }, []);
 
   const handleAdd = async () => {
-    setStatus(null);
     if (!canAdd) return;
     try {
       await sdk.actions.addFrame();
