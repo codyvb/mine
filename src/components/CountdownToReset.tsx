@@ -94,7 +94,7 @@ const CountdownToReset: React.FC<CountdownToResetProps> = ({ nextReset, onReset 
     <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg text-white text-lg w-full mx-auto">
       {/* Out of tries message at the top */}
       <div className="flex items-center mb-3 h-full justify-center py-2 w-full">
-        <h1 className="text-2xl font-mono text-center w-full">out of tries</h1>
+        <h1 className="text-2xl font-mono text-center w-full">Out of Tries</h1>
       </div>
       {/* 5x5 grid of tiles with floating timer */}
       <div className="relative w-full max-w-[90vw] aspect-square mb-4">
