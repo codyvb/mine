@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "Gems",
     images: [
       {
-        url: "https://www.gems.rip/card2.png",
+        url: "https://www.gems.rip/card3.png",
         width: 1200,
         height: 630,
         alt: "",
@@ -28,12 +28,12 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Gems",
-    images: ["https://www.gems.rip/card2.png"],
+    images: ["https://www.gems.rip/card3.png"],
   },
   other: {
     'fc:frame': JSON.stringify({
       version: "next",
-      imageUrl: "https://www.gems.rip/card2.png",
+      imageUrl: "https://www.gems.rip/card3.png",
       aspectRatio: "3:2",
       button: {
         title: "Launch Gems",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
           type: "launch_frame",
           name: "Gems",
           url: "https://gems.rip",
-          splashImageUrl: "https://www.gems.rip/icon2.png",
+          splashImageUrl: "https://www.gems.rip/icon6.png",
           splashBackgroundColor: "#f7f7f7"
         }
       }
