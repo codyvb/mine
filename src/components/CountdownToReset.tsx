@@ -4,20 +4,20 @@ import sdk, { AddFrame } from "@farcaster/frame-sdk";
 
 const AddAppButton: React.FC = () => {
   const [canAdd, setCanAdd] = useState(false);
-  const [alreadyAdded, setAlreadyAdded] = useState(false);
+  const [alreadyAdded, setAlreadyAdded] = useState<boolean | null>(null); // null = loading, true/false = checked
   const [status, setStatus] = useState<string | null>(null);
 
+  // Run check as early as possible, before rendering button
   useEffect(() => {
     let mounted = true;
     async function checkAdded() {
       if (typeof window !== "undefined" && sdk) {
-        // Check if the app is already added (frameAdded in sdk.context)
         try {
           const context = await sdk.context;
           if ((context as any)?.frameAdded) {
             if (mounted) setAlreadyAdded(true);
+            return;
           }
-          // TODO: Update this check if Farcaster Miniapps SDK exposes an official property for 'already added'.
         } catch {}
         if (
           sdk &&
@@ -25,11 +25,16 @@ const AddAppButton: React.FC = () => {
         ) {
           if (mounted) setCanAdd(true);
         }
+        if (mounted) setAlreadyAdded(false);
       }
     }
     checkAdded();
     return () => { mounted = false; };
   }, []);
+
+  // Do not render anything until we know if alreadyAdded
+  if (alreadyAdded === null) return null;
+  if (alreadyAdded === true) return null;
 
   const handleAdd = async () => {
     if (!canAdd) return;
@@ -48,7 +53,6 @@ const AddAppButton: React.FC = () => {
     }
   };
 
-  if (alreadyAdded) return null;
 
   return (
     <div className="flex flex-col items-center">
