@@ -23,12 +23,12 @@ export async function POST(req: Request) {
 
   // --- 3. Calculate current Denver/local time and daily period (DST-safe) ---
   const nowDenver = DateTime.now().setZone('America/Denver');
-  const period = nowDenver.toISODate(); // YYYY-MM-DD, DST-safe and matches get-daily-plays
-  // Optionally, calculate next reset for frontend (12pm Denver)
-  let nextResetDenver = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
-  if (nowDenver >= nextResetDenver) {
-    nextResetDenver = nextResetDenver.plus({ days: 1 });
+  // Calculate the start and end of the current play window (12pm MST to next 12pm MST)
+  let windowStart = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
+  if (nowDenver < windowStart) {
+    windowStart = windowStart.minus({ days: 1 });
   }
+  let nextResetDenver = windowStart.plus({ days: 1 });
 
 
   // --- 7. Upsert user (for FK constraint) ---
@@ -37,31 +37,27 @@ export async function POST(req: Request) {
     .upsert({ fid, username: `user_${fid}` }, { onConflict: 'fid' });
 
   // --- 8. Get user's play count for this period ---
-  const { data: existing } = await supabase
+  const { data: playRows } = await supabase
     .from('daily_plays')
-    .select('count')
+    .select('count, played_at')
     .eq('fid', fid)
-    .eq('play_date', period)
-    .maybeSingle();
+    .gte('played_at', windowStart.toUTC().toISO())
+    .lt('played_at', nextResetDenver.toUTC().toISO());
+
+  // Sum up play count in current window
+  const totalCount = playRows?.reduce((sum, row) => sum + row.count, 0) || 0;
 
   // --- 9. Check tries and increment ---
-  if (existing && existing.count >= maxPlays) {
+  if (totalCount >= maxPlays) {
     return NextResponse.json({ error: 'Daily limit reached' }, { status: 403 });
   }
 
-  if (existing) {
-    const { error: updateError } = await supabase
-      .from('daily_plays')
-      .update({ count: Math.max(existing.count + 1, 0) })
-      .eq('fid', fid)
-      .eq('play_date', period);
-    if (updateError) console.error('Supabase daily_plays update error:', updateError);
-  } else {
-    const { error: insertError } = await supabase
-      .from('daily_plays')
-      .insert({ fid, play_date: period, count: 1 });
-    if (insertError) console.error('Supabase daily_plays insert error:', insertError);
-  }
+  // Always insert a new play event with played_at as now (UTC)
+  const { error: insertError } = await supabase
+    .from('daily_plays')
+    .insert({ fid, played_at: nowDenver.toUTC().toISO(), count: 1 });
+  if (insertError) console.error('Supabase daily_plays insert error:', insertError);
+
 
   // --- 10. Create game ---
   const mineCount = 3;

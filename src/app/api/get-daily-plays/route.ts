@@ -19,29 +19,27 @@ export async function GET(req: Request): Promise<Response> {
   // 1. Use Luxon to get the current time in America/Denver (DST-safe)
   const nowDenver = DateTime.now().setZone('America/Denver');
 
-  // Calculate next reset: 12:00 PM today or tomorrow in Denver time
-  let nextResetDenver = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
-  if (nowDenver >= nextResetDenver) {
-    // If after 12pm, set to 12pm tomorrow
-    nextResetDenver = nextResetDenver.plus({ days: 1 });
+  // Calculate the start and end of the current play window (12pm MST to next 12pm MST)
+  let windowStart = nowDenver.set({ hour: 12, minute: 0, second: 0, millisecond: 0 });
+  if (nowDenver < windowStart) {
+    windowStart = windowStart.minus({ days: 1 });
   }
-  // Use the date portion for today for play tracking (in Denver time)
-  const period = nowDenver.toISODate();
-  // TEMP: Log for debugging
-  console.log('[get-daily-plays] nowDenver:', nowDenver.toISO(), 'nextResetDenver:', nextResetDenver.toISO());
-  // This logic ensures the reset is always at 12pm in America/Denver time (handles DST automatically).
+  let nextResetDenver = windowStart.plus({ days: 1 });
 
-  // 2. Get user's play count from daily_plays for this period (same as start-game)
-  const { data: existing, error: dailyPlaysError } = await supabase
+  // TEMP: Log for debugging
+  console.log('[get-daily-plays] nowDenver:', nowDenver.toISO(), 'windowStart:', windowStart.toISO(), 'nextResetDenver:', nextResetDenver.toISO());
+
+  // 2. Get user's play count from daily_plays for this window (using played_at timestamptz)
+  const { data: playRows, error: dailyPlaysError } = await supabase
     .from('daily_plays')
     .select('count')
     .eq('fid', fid)
-    .eq('play_date', period)
-    .maybeSingle();
+    .gte('played_at', windowStart.toISO())
+    .lt('played_at', nextResetDenver.toISO());
   if (dailyPlaysError) {
     return NextResponse.json({ error: 'Failed to get daily plays' }, { status: 500 });
   }
-  const playCount = existing?.count || 0;
+  const playCount = playRows?.reduce((sum, row) => sum + row.count, 0) || 0;
   // Fetch maxPlays from config
   const { data: maxPlaysRow, error: maxPlaysError } = await supabase
     .from('config')

@@ -48,3 +48,17 @@ body {
     --radius: 0.5rem;
   }
 }
+
+html, body {
+  overscroll-behavior-y: auto !important;
+  overscroll-behavior: auto !important;
+  overflow: visible !important;
+  touch-action: auto !important;
+}
+
+.leaderboard-modal-override {
+  touch-action: auto !important;
+  pointer-events: auto !important;
+  overscroll-behavior: contain !important;
+}
+
