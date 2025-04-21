@@ -12,12 +12,7 @@ export async function POST(req: Request) {
   const fid = await getFidFromRequest(req);
   if (!fid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // --- 2. Get config: reset time and max plays ---
-  const { data: resetRow } = await supabase
-    .from('config')
-    .select('value')
-    .eq('key', 'tries_reset_at')
-    .maybeSingle();
+  // --- 2. Get config: max plays only ---
   const { data: maxPlaysRow } = await supabase
     .from('config')
     .select('value')
@@ -25,36 +20,21 @@ export async function POST(req: Request) {
     .maybeSingle();
   const maxPlays = maxPlaysRow && !isNaN(Number(maxPlaysRow.value)) ? Number(maxPlaysRow.value) : 10;
 
-  // --- 3. Get current MST time ---
-  const now = new Date();
-  // MST is UTC-7 (no DST logic for simplicity)
-  const nowMST = new Date(now.getTime() - 7 * 60 * 60 * 1000);
-
-  // --- 4. Parse/reset period ---
-  let resetAt = resetRow ? new Date(resetRow.value) : null;
-  if (!resetAt || isNaN(resetAt.getTime())) {
-    // If not set, default to next 12pm MST
-    resetAt = new Date(nowMST);
-    resetAt.setHours(12, 0, 0, 0);
-    if (nowMST > resetAt) resetAt.setDate(resetAt.getDate() + 1);
-    await supabase.from('config').upsert({ key: 'tries_reset_at', value: resetAt.toISOString() }, { onConflict: 'key' });
+  // --- 3. Calculate current MST time and daily period ---
+  const nowUtc = new Date();
+  const nowMST = new Date(nowUtc.getTime() - 7 * 60 * 60 * 1000);
+  // Find most recent 12pm MST
+  const resetMST = new Date(nowMST);
+  resetMST.setHours(12, 0, 0, 0);
+  if (nowMST < resetMST) {
+    resetMST.setDate(resetMST.getDate() - 1);
   }
+  const period = resetMST.toISOString().slice(0, 10);
+  // Optionally, calculate next reset for frontend
+  const nextResetMST = new Date(resetMST);
+  nextResetMST.setDate(resetMST.getDate() + 1);
+  nextResetMST.setHours(12, 0, 0, 0);
 
-  // --- 5. If now > resetAt, update resetAt for next day and reset all counts ---
-  if (nowMST > resetAt) {
-    // Set next reset to next 12pm MST
-    const nextReset = new Date(resetAt);
-    nextReset.setDate(resetAt.getDate() + 1);
-    nextReset.setHours(12, 0, 0, 0);
-    await supabase.from('config').update({ value: nextReset.toISOString() }).eq('key', 'tries_reset_at');
-    // Option 1: Reset all counts to 0
-    await supabase.rpc('reset_daily_plays');
-    // Option 2: Alternatively, use period logic (not implemented here)
-    resetAt = nextReset;
-  }
-
-  // --- 6. Use the resetAt date as the period string (YYYY-MM-DD) ---
-  const period = resetAt.toISOString().slice(0, 10);
 
   // --- 7. Upsert user (for FK constraint) ---
   await supabase

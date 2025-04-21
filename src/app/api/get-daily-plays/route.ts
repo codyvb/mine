@@ -15,17 +15,20 @@ export async function GET(req: Request): Promise<Response> {
   const fid = await getFidFromRequest(req);
   if (!fid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // 1. Fetch communal reset time from config
-  const { data: configRow, error: configError } = await supabase
-    .from('config')
-    .select('value')
-    .eq('key', 'tries_reset_at')
-    .maybeSingle();
-  if (configError || !configRow) {
-    return NextResponse.json({ error: 'Config not found' }, { status: 500 });
+  // 1. Calculate current MST time and daily period (no config needed)
+  const nowUtc = new Date();
+  const nowMST = new Date(nowUtc.getTime() - 7 * 60 * 60 * 1000);
+  // Find most recent 12pm MST
+  const resetMST = new Date(nowMST);
+  resetMST.setHours(12, 0, 0, 0);
+  if (nowMST < resetMST) {
+    resetMST.setDate(resetMST.getDate() - 1);
   }
-  const resetAt = new Date(configRow.value);
-  const period = resetAt.toISOString().slice(0, 10);
+  const period = resetMST.toISOString().slice(0, 10);
+  // Optionally, calculate next reset for frontend
+  const nextResetMST = new Date(resetMST);
+  nextResetMST.setDate(resetMST.getDate() + 1);
+  nextResetMST.setHours(12, 0, 0, 0);
 
   // 2. Get user's play count from daily_plays for this period (same as start-game)
   const { data: existing, error: dailyPlaysError } = await supabase
@@ -55,16 +58,11 @@ export async function GET(req: Request): Promise<Response> {
   }
   const playsLeft = Math.max(0, maxPlays - (playCount || 0));
 
-  // 3. Calculate next communal reset (assume daily at same UTC time)
-  const now = new Date();
-  let nextReset = new Date(resetAt);
-  if (now >= resetAt) {
-    nextReset.setUTCDate(resetAt.getUTCDate() + 1);
-  }
-
+  // 3. Return next communal reset (12pm MST daily)
+  // nextResetMST was already calculated above
   return NextResponse.json({
     playsLeft,
-    nextReset: nextReset.toISOString(),
-    communalResetAt: resetAt.toISOString(),
+    nextReset: nextResetMST.toISOString(),
+    communalResetAt: nextResetMST.toISOString(),
   });
 }
