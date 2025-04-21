@@ -131,13 +131,13 @@ const CountdownToReset: React.FC<CountdownToResetProps> = ({ nextReset, onReset 
     <div className="flex flex-col items-center justify-center py-6 px-6 rounded-lg text-white text-lg w-full mx-auto">
       {/* Out of tries message at the top */}
       <div className="flex items-center mb-3 h-full justify-center py-2 w-full">
-        <h1 className="text-2xl font-mono text-center w-full">Out of Tries</h1>
+        <h1 className="text-2xl font-mono text-center w-full">💎</h1>
       </div>
       {/* 5x5 grid of tiles with floating timer */}
       <div className="relative w-full max-w-[90vw] aspect-square mb-4">
         {/* Floating timer centered over grid */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-          <span className="bg-black/70 px-4 py-2 rounded-xl text-2xl font-semibold text-white shadow-lg border border-neutral-700 mb-4 pointer-events-auto">
+          <span className="bg-black/70 px-4 py-2 rounded-xl text-2xl font-semibold text-purple-500 shadow-lg border border-neutral-700 mb-4 pointer-events-auto">
             Next play in {hours.toString().padStart(2, "0")}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
           </span>
           {/* Add App Button below timer */}
