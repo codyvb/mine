@@ -19,6 +19,7 @@ export interface Tile {
 
 const MinesGame: React.FC = () => {
   // ...existing state
+  const [pendingRevealIndex, setPendingRevealIndex] = useState<number | null>(null);
   const [isStartingNewRound, setIsStartingNewRound] = useState(false);
   // Track if the congrats modal was ever closed by the user
   // Tracks if the congrats modal was closed by the user (never reopens for this round)
@@ -347,25 +348,23 @@ const fetchTriesLeft = fetchTries;
   
   // Handle tile click (server)
   const handleTileClick = async (index: number) => {
+    // Prevent multiple reveals at once
+    if (pendingRevealIndex !== null) return;
     // ABSOLUTELY NO SOUND if game is over (sync ref)
     if (gameOverRef.current) {
       processingTilesRef.current.delete(index);
       return;
     }
-    
     if (confirmedRevealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
-    
+    setPendingRevealIndex(index);
     initAudio();
-    
     // Optimistically reveal the tile and animate
     setGrid(prevGrid => prevGrid.map((tile, idx) =>
       idx === index ? { ...tile, isAnimating: true, isRevealed: true } : tile
     ));
-    
     // Only add to processingTilesRef AFTER all checks
     processingTilesRef.current.add(index);
     setMessage("Revealing...");
-    
     try {
       const res = await fetch("/api/reveal-cell", {
         method: "POST",
@@ -422,6 +421,7 @@ const fetchTriesLeft = fetchTries;
           isRevealed: revealed
         };
       }));
+      setPendingRevealIndex(null);
       
       if (data.isMine) {
         gameOverRef.current = true;
@@ -446,7 +446,7 @@ const fetchTriesLeft = fetchTries;
       processingTilesRef.current.delete(index);
     } catch (e) {
       setMessage("Could not connect to server.");
-      
+      setPendingRevealIndex(null);
       processingTilesRef.current.delete(index);
     }
   };
@@ -669,6 +669,7 @@ const fetchTriesLeft = fetchTries;
             handleCollect={handleCollect}
             handleTryAgain={handleTryAgain}
             isStartingNewRound={isStartingNewRound}
+            pendingRevealIndex={pendingRevealIndex}
           />
         </div>
       </div>

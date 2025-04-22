@@ -18,6 +18,7 @@ export interface TileButtonProps {
   gameKey: number;
   safeRevealedCount: number;
   gameOver: boolean;
+  disabled?: boolean;
 }
 
 const TileButton: React.FC<TileButtonProps> = ({
@@ -32,6 +33,7 @@ const TileButton: React.FC<TileButtonProps> = ({
   gameKey,
   safeRevealedCount,
   gameOver,
+  disabled = false,
 }) => {
   // Set opacity for different scenarios
   let opacity = 1;
@@ -49,23 +51,21 @@ const TileButton: React.FC<TileButtonProps> = ({
     <motion.button
       key={`${gameKey}-${index}`}
       onClick={() => {
+        if (disabled) return;
         playSound('press');
         onClick();
       }}
       className={
-        `aspect-square w-full h-full flex items-center justify-center font-bold relative`
+        `aspect-square w-full h-full flex items-center justify-center font-bold relative
+         ${isSafeTileRevealed || isClickedMine || isOtherMine ? 'bg-transparent' : tile.isAnimating ? 'bg-purple-400' : 'bg-neutral-700'}
+         ${disabled ? 'opacity-50 pointer-events-none' : ''}
+        `
       }
       style={{
         touchAction: 'none',
         opacity,
         padding: 0,
         border: 'none',
-        backgroundColor:
-          isSafeTileRevealed || isClickedMine || isOtherMine
-            ? 'transparent'
-            : tile.isAnimating
-            ? '#4b5563'
-            : '#374151',
         borderRadius:
           isSafeTileRevealed ? '9999px' : '0.5rem',
         boxShadow:
@@ -73,6 +73,9 @@ const TileButton: React.FC<TileButtonProps> = ({
             ? 'inset 0 -4px 0 rgba(0,0,0,0.3)'
             : undefined,
       }}
+      disabled={disabled}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
     >
       {/* TOKEN REVEAL */}
       {isSafeTileRevealed && (

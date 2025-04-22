@@ -23,6 +23,7 @@ interface TileGridProps {
   handleCollect: () => void;
   handleTryAgain: () => void;
   isStartingNewRound?: boolean;
+  pendingRevealIndex?: number | null;
 }
 
 const TileGrid: React.FC<TileGridProps> = ({
@@ -39,6 +40,7 @@ const TileGrid: React.FC<TileGridProps> = ({
   handleCollect,
   handleTryAgain,
   isStartingNewRound = false,
+  pendingRevealIndex,
 }) => {
   return (
     <>
@@ -51,9 +53,10 @@ const TileGrid: React.FC<TileGridProps> = ({
         <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
           {grid.map((tile, index) => {
             const isClickedMine = tile.isMine && gameOver; // No distinction needed
-const isOtherMine = false; // No longer used
+            const isOtherMine = false; // No longer used
             const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
             const isUnrevealedSafe = gameOver && !tile.isMine && !revealedPositions.includes(index);
+            const disabled = pendingRevealIndex !== null;
             return (
               <TileButton
                 key={`${gameKey}-${index}`}
@@ -68,7 +71,7 @@ const isOtherMine = false; // No longer used
                 gameKey={gameKey}
                 safeRevealedCount={safeRevealedCount}
                 gameOver={gameOver}
-                
+                disabled={disabled}
               />
             );
           })}
