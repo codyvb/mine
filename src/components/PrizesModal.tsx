@@ -1,5 +1,8 @@
 import React from 'react';
 import SendTokenButton from './SendTokenButton';
+import AddAppButton from './AddAppButton';
+import ViewProfileButton from './ViewProfileButton';
+import useHasAddedApp from './useHasAddedApp';
 
 const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -13,38 +16,61 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
         >
           ×
         </button>
-        <h1 className="text-4xl flex items-center justify-center mb-6">💎</h1>
+        <h1 className="text-2xl flex items-center justify-center mb-6">Gems</h1>
 
         {/* Featured section */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2 text-left">Featured</h2>
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-purple-600 shadow-lg flex-shrink-0">
+          <h2 className="text-lg font-semibold mb-2 text-left">Featured Prize</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-600 shadow-lg flex-shrink-0">
               <img
                 src="/tokens/horse.png"
                 alt="Gem Horse"
                 className="w-full h-full object-cover"
               />
             </div>
-            <a
-              href="https://zora.co/coin/base:0x831f74f796f2f79d65ac5cdc6e813d807d9de54b"
-              target="_blank"
-              rel="noopener noreferrer"
-              tabIndex={0}
-              aria-label="View horse token on Zora"
-              className="text-purple-400 hover:underline text-sm font-mono break-all"
-            >
-              View on Zora ↗
-            </a>
+            <div className="flex flex-col">
+              <span className="font-mono text-base text-white">$FATHORSE</span>
+              <a
+                href="https://zora.co/coin/base:0x831f74f796f2f79d65ac5cdc6e813d807d9de54b"
+                target="_blank"
+                rel="noopener noreferrer"
+                tabIndex={0}
+                aria-label="View horse token on Zora"
+                className="text-purple-400 hover:underline text-xs font-mono break-all mt-1"
+              >
+                View on Zora ↗
+              </a>
+            </div>
           </div>
         </div>
 
         {/* About section */}
         <div className="mb-2">
           <h2 className="text-lg font-semibold mb-2 text-left">About</h2>
-          <p className="text-sm text-neutral-300">We are a new game for Farcaster.</p>
+          <ul className="text-sm text-neutral-300 list-disc list-inside space-y-1">
+            Gems is a new daily game on Farcaster. <p></p>
+            <li>1 grid full of prizes and bombs.</li>
+            <li>Collect as many prizes as you can before hitting a bomb.</li>
+            <li>10 tries per day.</li>
+          </ul>
         </div>
+
+        {/* Add App and View Profile Buttons */}
+        <AddProfileButtons />
       </div>
+    </div>
+  );
+};
+
+// Helper to conditionally render AddAppButton
+const AddProfileButtons: React.FC = () => {
+  const hasAdded = useHasAddedApp();
+  if (hasAdded === null) return null; // Optionally: loading spinner
+  return (
+    <div className="flex flex-col items-center gap-3 mt-6 w-full">
+      {!hasAdded && <AddAppButton />}
+      <ViewProfileButton />
     </div>
   );
 };
