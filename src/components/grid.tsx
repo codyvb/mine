@@ -411,8 +411,8 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       setGameWon(data.won);
       
       setGrid(prevGrid => prevGrid.map((tile, idx) => {
-        // Always keep revealed if it was revealed locally or by server
-        const revealed = tile.isRevealed || data.revealed.includes(idx);
+        // Use the merged revealed list (allRevealed) for robust UI
+        const revealed = tile.isRevealed || allRevealed.includes(idx);
         
         if (idx === index) {
           return {
