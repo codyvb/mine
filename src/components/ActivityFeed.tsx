@@ -87,7 +87,7 @@ export default function ActivityFeed() {
         return (
           <div
             key={game.id || idx}
-            className="flex items-center gap-4 px-2 py-2"
+            className="flex items-center gap-4 px-2"
             style={{ minHeight: 56 }}
           >
             <img
@@ -96,10 +96,10 @@ export default function ActivityFeed() {
               className="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800"
               style={{ flexShrink: 0 }}
             />
-            <span className="font-mono text-base text-yellow-300 truncate max-w-[110px]">{name}</span>
-            <span className="font-mono text-base text-neutral-300 ml-2 whitespace-nowrap">{timeAgo(game.ended_at)}</span>
+            <span className=" text-base text-white truncate max-w-[110px]">{name}</span>
+            <span className=" text-base text-neutral-300 ml-2 whitespace-nowrap">{timeAgo(game.ended_at)}</span>
             {game.won === true && (
-              <span className="flex items-center ml-2 text-cyan-300 font-mono text-base">
+              <span className="flex items-center ml-2 text-cyan-300 text-base">
                 +1
                 <img src="/tokens/horse.png" alt="horse" className="w-6 h-6 ml-1 inline-block align-middle" />
               </span>

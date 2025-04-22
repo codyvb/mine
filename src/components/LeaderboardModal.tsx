@@ -32,7 +32,7 @@ const LeaderboardModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
         >
           ×
         </button>
-        <h1 className="text-2xl font-mono text-center mb-4">Leaderboard</h1>
+        <h1 className="text-2xl text-center mb-4">Activity</h1>
         {/* Activity feed scroll area */}
         <div
           ref={scrollRef}
