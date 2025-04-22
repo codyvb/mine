@@ -13,13 +13,26 @@ export async function POST(req: Request) {
   const fid = await getFidFromRequest(req);
   if (!fid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // --- 2. Get config: max plays only ---
-  const { data: maxPlaysRow } = await supabase
+  // --- 2. Get config: admin-specific max plays if present ---
+  const adminKey = `max_plays_admin_${fid}`;
+  let maxPlays: number | null = null;
+  // Try admin key first
+  const { data: adminMaxPlaysRow } = await supabase
     .from('config')
     .select('value')
-    .eq('key', 'max_plays')
+    .eq('key', adminKey)
     .maybeSingle();
-  const maxPlays = maxPlaysRow && !isNaN(Number(maxPlaysRow.value)) ? Number(maxPlaysRow.value) : 10;
+  if (adminMaxPlaysRow && !isNaN(Number(adminMaxPlaysRow.value))) {
+    maxPlays = Number(adminMaxPlaysRow.value);
+  } else {
+    // Fallback to normal max_plays
+    const { data: maxPlaysRow } = await supabase
+      .from('config')
+      .select('value')
+      .eq('key', 'max_plays')
+      .maybeSingle();
+    maxPlays = maxPlaysRow && !isNaN(Number(maxPlaysRow.value)) ? Number(maxPlaysRow.value) : 10;
+  }
 
   // --- 3. Calculate current Denver/local time and daily period (DST-safe) ---
   const nowDenver = DateTime.now().setZone('America/Denver');

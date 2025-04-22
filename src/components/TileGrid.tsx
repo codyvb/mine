@@ -92,8 +92,9 @@ const TileGrid: React.FC<TileGridProps> = ({
                 onClick={handleTryAgain}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                disabled={tries === 0}
               >
-                Try Again ({tries} tries left)
+                {tries === 0 ? 'No tries left' : `Try Again (${tries} tries left)`}
               </motion.button>
             ) : (
               safeRevealedCount > 0 ? (

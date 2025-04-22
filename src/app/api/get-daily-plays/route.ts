@@ -40,20 +40,31 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'Failed to get daily plays' }, { status: 500 });
   }
   const playCount = playRows?.reduce((sum, row) => sum + row.count, 0) || 0;
-  // Fetch maxPlays from config
-  const { data: maxPlaysRow, error: maxPlaysError } = await supabase
+  // Fetch admin-specific maxPlays from config first
+  const adminKey = `max_plays_admin_${fid}`;
+  let maxPlays: number | null = null;
+  // Try admin key first
+  const { data: adminMaxPlaysRow, error: adminMaxPlaysError } = await supabase
     .from('config')
     .select('value')
-    .eq('key', 'max_plays')
+    .eq('key', adminKey)
     .maybeSingle();
-  if (maxPlaysError || !maxPlaysRow) {
-    return NextResponse.json({ error: 'Config for max_plays missing' }, { status: 500 });
-  }
-  // Only use config value for maxPlays. No fallback allowed.
-  // This is intentional, as we want to ensure that the config table is the single source of truth for maxPlays.
-  const maxPlays = parseInt(maxPlaysRow.value, 10);
-  if (isNaN(maxPlays)) {
-    return NextResponse.json({ error: 'Config for max_plays invalid' }, { status: 500 });
+  if (adminMaxPlaysRow && !isNaN(parseInt(adminMaxPlaysRow.value, 10))) {
+    maxPlays = parseInt(adminMaxPlaysRow.value, 10);
+  } else {
+    // Fallback to normal max_plays
+    const { data: maxPlaysRow, error: maxPlaysError } = await supabase
+      .from('config')
+      .select('value')
+      .eq('key', 'max_plays')
+      .maybeSingle();
+    if (maxPlaysError || !maxPlaysRow) {
+      return NextResponse.json({ error: 'Config for max_plays missing' }, { status: 500 });
+    }
+    maxPlays = parseInt(maxPlaysRow.value, 10);
+    if (isNaN(maxPlays)) {
+      return NextResponse.json({ error: 'Config for max_plays invalid' }, { status: 500 });
+    }
   }
   const playsLeft = Math.max(0, maxPlays - (playCount || 0));
 
