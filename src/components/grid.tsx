@@ -411,23 +411,29 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       setGameWon(data.won);
       
       setGrid(prevGrid => prevGrid.map((tile, idx) => {
-        // Use the merged revealed list (allRevealed) for robust UI
-        const revealed = tile.isRevealed || allRevealed.includes(idx);
-        
-        if (idx === index) {
+        // If this is the just-clicked tile and NOT a mine, always keep it revealed
+        if (idx === index && !data.isMine) {
           return {
             ...tile,
             isAnimating: false,
-            isRevealed: revealed,
-            isMine: data.isMine ? true : tile.isMine
+            isRevealed: true,
+            isMine: tile.isMine
           };
         }
-        
-        // If game over and mines need to be revealed
+        // If this is the just-clicked tile and IS a mine, reveal as mine
+        if (idx === index && data.isMine) {
+          return {
+            ...tile,
+            isAnimating: false,
+            isRevealed: true,
+            isMine: true
+          };
+        }
+        // For all other tiles, use the merged revealed list
+        const revealed = tile.isRevealed || allRevealed.includes(idx);
         if (data.isMine && data.minePositions && data.minePositions.includes(idx)) {
           return { ...tile, isMine: true, isRevealed: true, isAnimating: false };
         }
-        
         return {
           ...tile,
           isRevealed: revealed
@@ -446,6 +452,9 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
         if (data.minePositions) {
           setMinePositions(data.minePositions);
         }
+        
+        // Reveal all tiles at end state (mine hit)
+        setGrid(prevGrid => prevGrid.map(tile => ({ ...tile, isRevealed: true, isAnimating: false })));
         return;
       } else {
         setMessage("Safe! Keep going.");
@@ -594,6 +603,9 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       setModalWinAmount(verifiedAmount); // <-- Always show backend-verified amount in modal
       // If modal is not open, open it now (should already be open, but for safety)
       if (!modalOpen) setModalOpen(true);
+
+      // Reveal all tiles at end state (cash out)
+      setGrid(prevGrid => prevGrid.map(tile => ({ ...tile, isRevealed: true, isAnimating: false })));
       
       // 2. Call /api/send-token with only the FID; backend will securely determine the amount
       const sendRes = await fetch("/api/send-token", {
