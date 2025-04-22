@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { parseUnits, JsonRpcProvider, Wallet, Contract } from 'ethers';
 import { createClient } from '@supabase/supabase-js';
 
-const TOKEN_ADDRESS = '0xF4123bC7E8849C009fcaf4D5C5E9F847BbD60f6B';
+const TOKEN_ADDRESS = '0x831f74f796f2f79d65ac5cdc6e813d807d9de54b';
 const BASE_RPC_URL = process.env.BASE_RPC_URL;
 const BASE_PRIVATE_KEY = process.env.BASE_PRIVATE_KEY;
 

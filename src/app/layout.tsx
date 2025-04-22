@@ -36,7 +36,7 @@ export const metadata: Metadata = {
       imageUrl: "https://www.gems.rip/card7.png",
       aspectRatio: "3:2",
       button: {
-        title: "Find Some Gems!",
+        title: "Win Some Gems!",
         action: {
           type: "launch_frame",
           name: "Gems",

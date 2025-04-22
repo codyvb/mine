@@ -44,7 +44,7 @@ const TileGrid: React.FC<TileGridProps> = ({
     <>
       {/* Header Section */}
       <div className="flex items-center h-full justify-center py-2">
-        <h1 className="text-2xl text-center">Find some Gems!</h1>
+        <h1 className="text-2xl text-center">Win some Gems!</h1>
       </div>
       {/* Grid Section */}
       <div className="flex items-center justify-center px-4 py-2 flex-grow">
