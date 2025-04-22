@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { DateTime } from "luxon";
+import sdk from "@farcaster/frame-sdk";
 
 interface GameActivity {
   id: number;
@@ -84,23 +85,41 @@ export default function ActivityFeed() {
         const avatar = user.pfp_url || "/default-avatar.png";
         // Use ended_at for time-ago if present, else fallback to started_at
         // Always use started_at for time display
+        const handleUserClick = async (e: React.MouseEvent) => {
+          e.preventDefault();
+          if (sdk && sdk.actions && typeof sdk.actions.viewProfile === "function") {
+            try {
+              await sdk.actions.viewProfile({ fid: game.fid });
+            } catch {}
+          }
+        };
         return (
           <div
             key={game.id || idx}
-            className="flex items-center gap-4 px-2"
+            className="flex items-center py-2 w-full"
             style={{ minHeight: 56 }}
           >
-            <img
-              src={avatar}
-              alt={name}
-              className="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800"
-              style={{ flexShrink: 0 }}
-            />
-            <span className=" text-base text-white truncate max-w-[110px]">{name}</span>
-            <span className=" text-base text-neutral-300 ml-2 whitespace-nowrap">{timeAgo(game.ended_at)}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                className="flex items-center gap-2 focus:outline-none group"
+                onClick={handleUserClick}
+                title={`View @${user.username || user.display_name || game.fid} on Farcaster`}
+                style={{ background: 'none', border: 'none', padding: 0, margin: 0, cursor: 'pointer' }}
+                tabIndex={0}
+              >
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-8 h-8 rounded-full border border-neutral-700 bg-neutral-800 group-hover:border-purple-500 transition-colors"
+                  style={{ flexShrink: 0 }}
+                />
+                <span className="text-base text-white truncate max-w-[110px] group-hover:text-purple-400 transition-colors">{name}</span>
+              </button>
+              <span className="text-base text-neutral-300 ml-2 whitespace-nowrap">{timeAgo(game.ended_at)}</span>
+            </div>
             {game.won === true && (
-              <span className="flex items-center ml-2 text-cyan-300 text-base">
-                +1
+              <span className="flex items-center text-cyan-300 text-base ml-auto">
+                +
                 <img src="/tokens/horse.png" alt="horse" className="w-6 h-6 ml-1 inline-block align-middle" />
               </span>
             )}

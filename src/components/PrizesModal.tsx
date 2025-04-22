@@ -18,9 +18,20 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
         </button>
         <h1 className="text-2xl flex items-center justify-center mb-6">Gems</h1>
 
+        {/* About section */}
+        <div className="mb-4">
+          <h2 className="text-2xl  mb-2 text-left">Gems is a new daily game on Farcaster. <p></p></h2>
+          <h2 className="text-lg font-semibold mb-4 text-left">How it works <p></p></h2>
+
+          <ul className="text-sm text-neutral-300 list-disc list-inside space-y-1">
+            <li>Collect as many prizes as you can before hitting a bomb.</li>
+            <li>10 tries per day.</li>
+          </ul>
+        </div>
+
         {/* Featured section */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2 text-left">Featured Prize</h2>
+        <div className="mb-6 ">
+          <h2 className="text-lg font-semibold mb-4 text-left">Featured Gems</h2>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-purple-600 shadow-lg flex-shrink-0">
               <img
@@ -43,17 +54,6 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
               </a>
             </div>
           </div>
-        </div>
-
-        {/* About section */}
-        <div className="mb-2">
-          <h2 className="text-lg font-semibold mb-2 text-left">About</h2>
-          <ul className="text-sm text-neutral-300 list-disc list-inside space-y-1">
-            Gems is a new daily game on Farcaster. <p></p>
-            <li>1 grid full of prizes and bombs.</li>
-            <li>Collect as many prizes as you can before hitting a bomb.</li>
-            <li>10 tries per day.</li>
-          </ul>
         </div>
 
         {/* Add App and View Profile Buttons */}
