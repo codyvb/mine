@@ -40,13 +40,14 @@ const MinesGame: React.FC = () => {
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
   const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
+const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const gameOverRef = useRef(false);
   const [gameWon, setGameWon] = useState(false);
   const [mineHit, setMineHit] = useState(false);
   
-  // Always derive the count
-  const safeRevealedCount = revealedPositions.filter(idx => grid[idx] && !grid[idx].isMine).length;
+  // Always derive the count from backend-confirmed positions
+  const safeRevealedCount = confirmedRevealedPositions.filter((idx: number) => grid[idx] && !grid[idx].isMine).length;
   
   const [canCashOut, setCanCashOut] = useState(false);
   const [message, setMessage] = useState('Click on tiles to reveal them!');
@@ -344,7 +345,7 @@ const MinesGame: React.FC = () => {
       }));
       
       setGrid(newGrid);
-      setRevealedPositions(data.revealedPositions || []);
+      setConfirmedRevealedPositions(data.revealedPositions || []);
       setMinePositions([]); // Hide mines until game over
       setGameOver(false);
       setGameWon(false);
@@ -369,7 +370,7 @@ const MinesGame: React.FC = () => {
       return;
     }
     
-    if (revealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
+    if (confirmedRevealedPositions.includes(index) || processingTilesRef.current.has(index)) return;
     
     initAudio();
     
@@ -400,8 +401,8 @@ const MinesGame: React.FC = () => {
         return;
       }
       
-      // Merge revealed positions optimistically
-      setRevealedPositions(prev => Array.from(new Set([...prev, ...data.revealed])));
+      // Update revealed positions from backend
+      setConfirmedRevealedPositions(data.revealed || []);
       setGameOver(data.gameOver);
       setGameWon(data.won);
       
@@ -546,7 +547,7 @@ const MinesGame: React.FC = () => {
     // Allow collect if player hasn't lost and has revealed at least one tile
     if (gameOver && !gameWon) return;
     if (mineHit) return;
-    if (revealedPositions.length === 0 || !fid || !gameId) return;
+    if (confirmedRevealedPositions.length === 0 || !fid || !gameId) return;
     
     // Open congrats modal immediately, but only ONCE per round
     if (!modalOpen && !modalManuallyClosed) {
@@ -668,7 +669,7 @@ const MinesGame: React.FC = () => {
         <div className="flex flex-col h-[calc(100%-60px)] justify-between">
           <TileGrid
             grid={grid}
-            revealedPositions={revealedPositions}
+            revealedPositions={confirmedRevealedPositions}
             minePositions={minePositions}
             gameOver={gameOver}
             clickedMineIndex={clickedMineIndex}

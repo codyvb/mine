@@ -8,11 +8,11 @@ export async function GET() {
       signature: "MHg2MjQzMWIyYjAxNzk3Y2E2MDM1YmIxZWE1M2Q3Y2RjNjNlMTExNzVhNDM3NDQyZmM0ZWNjMDhmNzc5NzcwMmZjNmRkN2RiYjIxNDBmY2UzOGExMjNkOTViYzZkNzQzYjBiNGE1YjMxNTlhNTVlYjAzOTlmMzM0YWE4OGM0YmI5NjBi"
     },  
     frame: {
-      version: "1",
+      version: "next",
       name: "Gems",
       iconUrl: `${appUrl}/icon6.png`,
       homeUrl: appUrl,
-      imageUrl: `${appUrl}/card3.png`,
+      imageUrl: `${appUrl}/card4.png`,
       buttonTitle: "Launch",
       splashImageUrl: `${appUrl}/icon6.png`,
       splashBackgroundColor: "#f7f7f7",

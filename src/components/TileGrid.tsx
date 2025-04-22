@@ -44,7 +44,7 @@ const TileGrid: React.FC<TileGridProps> = ({
     <>
       {/* Header Section */}
       <div className="flex items-center h-full justify-center py-2">
-        <h1 className="text-2xl text-center">Find some Gems</h1>
+        <h1 className="text-2xl text-center">Find some Gems!</h1>
       </div>
       {/* Grid Section */}
       <div className="flex items-center justify-center px-4 py-2 flex-grow">
@@ -87,7 +87,7 @@ const TileGrid: React.FC<TileGridProps> = ({
               Try Again ({tries} tries left)
             </motion.button>
           ) : (
-            revealedPositions.length > 0 ? (
+            safeRevealedCount > 0 ? (
               <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
                 <span className="flex-1 text-white text-xl font-semibold text-center whitespace-nowrap">
                   {safeRevealedCount}/22
