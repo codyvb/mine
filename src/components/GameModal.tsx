@@ -9,6 +9,8 @@ interface GameModalProps {
   winAmount?: number;
   isWin: boolean;
   onTryAgain: () => void;
+  grid: { id: number; isMine: boolean; isRevealed: boolean; isAnimating: boolean }[];
+  revealedPositions: number[];
 }
 
 const GameModal: React.FC<GameModalProps> = ({
@@ -17,17 +19,34 @@ const GameModal: React.FC<GameModalProps> = ({
   winAmount = 0,
   isWin,
   onTryAgain,
+  grid,
+  revealedPositions,
 }) => {
   if (!isOpen) return null;
+
+  // Helper to generate Wordle-style emoji grid
+  const getEmojiGrid = () => {
+    const size = 5;
+    let str = '';
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        const idx = row * size + col;
+        str += revealedPositions.includes(idx) ? '🟩' : '⬜️';
+      }
+      if (row !== size - 1) str += '\n';
+    }
+    return str;
+  };
 
   // Compose cast handler for share button
   const handleShare = async () => {
     try {
-      await sdk.actions.composeCast({ text: `I just won ${winAmount} $fathorse on gems.rip` });
+      await sdk.actions.composeCast({ text: `I just won $fathorse on gems.rip\n\n${getEmojiGrid()}` });
     } catch (e) {
       alert('Failed to open Farcaster compose.');
     }
   };
+
 
   return (
     <div className="fixed inset-0 bg-opacity-70 flex items-center justify-center z-50">
@@ -53,14 +72,15 @@ const GameModal: React.FC<GameModalProps> = ({
         <div className="flex flex-col items-center justify-center pt-4 pb-6">
           {isWin ? (
             <>
-              <motion.div 
-                className="text-3xl mb-2"
+              <motion.pre
+                className="text-2xl mb-2 font-mono leading-tight whitespace-pre text-center"
                 initial={{ rotateY: 180, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
+                style={{ padding: 0, margin: 0 }}
               >
-                🎉
-              </motion.div>
+                {getEmojiGrid()}
+              </motion.pre>
               <h2 className="text-2xl font-bold text-center mb-2">Congrats!</h2>
               <p className="text-center text-xl mb-6">
                 You won <span className="text-green-500 font-bold">{winAmount}</span> $fathorse tokens

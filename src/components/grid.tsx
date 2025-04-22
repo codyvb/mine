@@ -710,6 +710,8 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
         winAmount={modalWinAmount}
         isWin={modalIsWin}
         onTryAgain={handleTryAgain}
+        grid={grid}
+        revealedPositions={confirmedRevealedPositions}
       />
     </>
   );
