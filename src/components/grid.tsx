@@ -401,8 +401,12 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
         return;
       }
       
-      // Update revealed positions from backend
-      setConfirmedRevealedPositions(data.revealed || []);
+      // Defensively ensure the just-clicked tile is included in revealed positions
+      const backendRevealed = data.revealed || [];
+      const allRevealed = backendRevealed.includes(index)
+        ? backendRevealed
+        : [...backendRevealed, index];
+      setConfirmedRevealedPositions(allRevealed);
       setGameOver(data.gameOver);
       setGameWon(data.won);
       
