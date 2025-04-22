@@ -374,9 +374,9 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
     
     initAudio();
     
-    // Animation feedback only (no optimistic reveal)
+    // Optimistically reveal the tile and animate
     setGrid(prevGrid => prevGrid.map((tile, idx) =>
-      idx === index ? { ...tile, isAnimating: true } : tile
+      idx === index ? { ...tile, isAnimating: true, isRevealed: true } : tile
     ));
     
     // Only add to processingTilesRef AFTER all checks
