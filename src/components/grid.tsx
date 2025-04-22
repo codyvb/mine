@@ -20,6 +20,8 @@ export interface Tile {
 }
 
 const MinesGame: React.FC = () => {
+  // ...existing state
+  const [isStartingNewRound, setIsStartingNewRound] = useState(false);
   // Track if the congrats modal was ever closed by the user
   // Tracks if the congrats modal was closed by the user (never reopens for this round)
   const [modalManuallyClosed, setModalManuallyClosed] = useState(false);
@@ -517,16 +519,25 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
     // The modal will only open again if the user explicitly collects in the new round
   };
 
-  const handleTryAgain = () => {
+  const handleTryAgain = async () => {
+    setIsStartingNewRound(true); // Hide footer buttons immediately
     gameOverRef.current = false;
     processingTilesRef.current = new Set();
     setMineHit(false);
     setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
-
-    playSound('please');
+    setGameOver && setGameOver(false);
+    setGameWon && setGameWon(false);
+    setCanCashOut && setCanCashOut(false);
+    setMessage && setMessage("");
+    setClickedMineIndex && setClickedMineIndex(null);
+    setModalWinAmount && setModalWinAmount(0);
+    setModalIsWin && setModalIsWin(false);
     setModalOpen(false);
     setTries(t => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
-    startNewRound();
+    setGameKey && setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
+    playSound('please');
+    await startNewRound(); // If this is async, await it
+    setIsStartingNewRound(false); // Show buttons again when new round is ready
     // modalManuallyClosed will reset via useEffect on gameKey change
     // The modal will only open again if the user explicitly collects in the new round
   };
@@ -697,6 +708,7 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
             tries={tries ?? 0}
             handleCollect={handleCollect}
             handleTryAgain={handleTryAgain}
+            isStartingNewRound={isStartingNewRound}
           />
         </div>
       </div>

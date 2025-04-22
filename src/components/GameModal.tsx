@@ -42,7 +42,7 @@ const GameModal: React.FC<GameModalProps> = ({
   const handleShare = async () => {
     try {
       await sdk.actions.composeCast({
-        text: `I just won some gems on @gemsgame\n\n${getEmojiGrid()}`,
+        text: `I just won some gems on gems.rip\n\n${getEmojiGrid()}`,
         embeds: [
           "https://gems.rip"
         ]
