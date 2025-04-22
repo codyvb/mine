@@ -14,7 +14,6 @@ interface TileGridProps {
   revealedPositions: number[];
   minePositions: number[];
   gameOver: boolean;
-  clickedMineIndex: number | null;
   safeRevealedCount: number;
   playSound: (type: 'press' | 'click' | 'mine' | 'cash' | 'please' | 'sent') => void;
   handleTileClick: (index: number) => void;
@@ -31,7 +30,6 @@ const TileGrid: React.FC<TileGridProps> = ({
   revealedPositions,
   minePositions,
   gameOver,
-  clickedMineIndex,
   safeRevealedCount,
   playSound,
   handleTileClick,
@@ -52,8 +50,8 @@ const TileGrid: React.FC<TileGridProps> = ({
       <div className="flex items-center justify-center px-4 py-2 flex-grow">
         <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
           {grid.map((tile, index) => {
-            const isClickedMine = tile.isMine && index === clickedMineIndex && gameOver;
-            const isOtherMine = tile.isMine && gameOver && index !== clickedMineIndex;
+            const isClickedMine = tile.isMine && gameOver; // No distinction needed
+const isOtherMine = false; // No longer used
             const isSafeTileRevealed = revealedPositions.includes(index) && !tile.isMine;
             const isUnrevealedSafe = gameOver && !tile.isMine && !revealedPositions.includes(index);
             return (
@@ -70,7 +68,7 @@ const TileGrid: React.FC<TileGridProps> = ({
                 gameKey={gameKey}
                 safeRevealedCount={safeRevealedCount}
                 gameOver={gameOver}
-                clickedMineIndex={clickedMineIndex}
+                
               />
             );
           })}

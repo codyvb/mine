@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTries } from './TriesContext';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 
 import GameModal from './GameModal';
 import CountdownToReset from './CountdownToReset';
@@ -25,8 +23,6 @@ const MinesGame: React.FC = () => {
   // Track if the congrats modal was ever closed by the user
   // Tracks if the congrats modal was closed by the user (never reopens for this round)
   const [modalManuallyClosed, setModalManuallyClosed] = useState(false);
-  const router = useRouter();
-  const { tries, setTries, fetchTries, nextReset } = useTries();
 
   // UI loading state
   const [isUILoading, setIsUILoading] = useState(true);
@@ -41,8 +37,7 @@ const MinesGame: React.FC = () => {
 
   const [grid, setGrid] = useState<Tile[]>([]);
   const [minePositions, setMinePositions] = useState<number[]>([]);
-  const [revealedPositions, setRevealedPositions] = useState<number[]>([]);
-const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<number[]>([]);
+  const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<number[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const gameOverRef = useRef(false);
   const [gameWon, setGameWon] = useState(false);
@@ -57,14 +52,14 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
 
   // Server/game integration state
   const [fid, setFid] = useState<number | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isLoadingGame, setIsLoadingGame] = useState(false);
-  const [supabaseStatus, setSupabaseStatus] = useState<string>('');
+  
 
   // Fetch tries left
   // Fetch tries from context
-  const fetchTriesLeft = fetchTries;
+  const { tries, setTries, fetchTries, nextReset } = useTries();
+const fetchTriesLeft = fetchTries;
 
   // Load Farcaster context and fetch tries only after FID is set
   useEffect(() => {
@@ -74,13 +69,11 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
         const context = await sdk.context;
         const fetchedFid = context?.user?.fid || null;
         setFid(fetchedFid);
-        setIsConnected(!!fetchedFid);
         if (fetchedFid && !cancelled) {
           await fetchTriesLeft(fetchedFid);
         }
       } catch (e) {
         setFid(null);
-        setIsConnected(false);
       } finally {
         if (!cancelled) setIsUILoading(false);
       }
@@ -100,15 +93,10 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
     if (fid && tries === null && !isUILoading) {
       fetchTriesLeft(fid);
     }
-  }, [fid, tries, isUILoading]);
+  }, [fid, isUILoading]);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalIsWin, setModalIsWin] = useState(false);
-  const [modalWinAmount, setModalWinAmount] = useState(0);
-  
-  // Keep track of the clicked mine index
-  const [clickedMineIndex, setClickedMineIndex] = useState<number | null>(null);
   
   // Audio state with refs to avoid re-renders
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -268,7 +256,7 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
   // Initialize the game
   useEffect(() => {
     // Only start a new round if user is connected
-    if (isConnected && fid) {
+    if (fid) {
       startNewRound();
     }
     
@@ -299,23 +287,20 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       if (meta.parentNode) meta.parentNode.removeChild(meta);
       if (style.parentNode) style.parentNode.removeChild(style);
     };
-  }, [isConnected, fid]);
+  }, [fid]);
 
   // Start a new round (server)
   const startNewRound = async () => {
     gameOverRef.current = false;
     processingTilesRef.current = new Set();
     setMineHit(false);
-    setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
 
     if (!fid) {
       setMessage("Connect to Farcaster to play!");
-      setSupabaseStatus("Not connected to Farcaster");
       return;
     }
     
     setIsLoadingGame(true);
-    setSupabaseStatus("Connecting to Supabase...");
     
     try {
       const res = await fetch("/api/start-game", {
@@ -330,7 +315,6 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       
       if (!res.ok) {
         setMessage(data.error || "Failed to start game");
-        setSupabaseStatus(data.error || "Supabase error");
         setIsLoadingGame(false);
         return;
       }
@@ -353,12 +337,9 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       setGameWon(false);
       setCanCashOut(false);
       setMessage("Click on tiles to reveal them!");
-      setClickedMineIndex(null);
       setGameKey(prevKey => prevKey + 1);
-      setSupabaseStatus("Connected to Supabase!");
     } catch (e) {
       setMessage("Could not connect to server.");
-      setSupabaseStatus("Could not connect to Supabase");
     } finally {
       setIsLoadingGame(false);
     }
@@ -447,7 +428,6 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
         setGameOver(true);
         setGameWon(false);
         setMineHit(true);
-        setClickedMineIndex(index);
         setMessage("Boom! You hit a mine.");
         playSound('mine');
         
@@ -466,7 +446,7 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       processingTilesRef.current.delete(index);
     } catch (e) {
       setMessage("Could not connect to server.");
-      setSupabaseStatus("Could not connect to Supabase");
+      
       processingTilesRef.current.delete(index);
     }
   };
@@ -492,21 +472,16 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       
       if (!res.ok) {
         setMessage(data.error || "Failed to cash out");
-        setSupabaseStatus(data.error || "Supabase error");
         return;
       }
       
       setGameOver(true);
       setGameWon(true);
       setMinePositions(data.minePositions);
-      setRevealedPositions(data.revealed);
-      setModalIsWin(true);
-      setModalWinAmount(data.revealed?.length || 0); // Use backend-verified amount for modal
       setMessage("You cashed out!");
       playSound('cash');
     } catch (e) {
       setMessage("Could not connect to server.");
-      setSupabaseStatus("Could not connect to Supabase");
     }
   };
   
@@ -524,22 +499,16 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
     gameOverRef.current = false;
     processingTilesRef.current = new Set();
     setMineHit(false);
-    setRevealedPositions([]); // Reset revealed tiles so Collect button is hidden
-    setGameOver && setGameOver(false);
-    setGameWon && setGameWon(false);
-    setCanCashOut && setCanCashOut(false);
-    setMessage && setMessage("");
-    setClickedMineIndex && setClickedMineIndex(null);
-    setModalWinAmount && setModalWinAmount(0);
-    setModalIsWin && setModalIsWin(false);
+    setGameOver(false);
+    setGameWon(false);
+    setCanCashOut(false);
+    setMessage("");
     setModalOpen(false);
-    setTries(t => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
-    setGameKey && setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
+    setTries((t: number | null) => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
+    setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
     playSound('please');
     await startNewRound(); // If this is async, await it
     setIsStartingNewRound(false); // Show buttons again when new round is ready
-    // modalManuallyClosed will reset via useEffect on gameKey change
-    // The modal will only open again if the user explicitly collects in the new round
   };
 
   // Handle modal close (X button)
@@ -577,14 +546,10 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
     if (!modalOpen && !modalManuallyClosed) {
       setGameOver(true);
       setGameWon(true);
-      setModalIsWin(true);
-      setModalWinAmount(safeRevealedCount);
       setModalOpen(true);
     } else {
       setGameOver(true);
       setGameWon(true);
-      setModalIsWin(true);
-      setModalWinAmount(safeRevealedCount);
     }
     
     playSound('cash'); // Play success sound immediately when user collects
@@ -611,10 +576,6 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       // Server will have validated and ended the game, and we can trust the revealed count
       const verifiedAmount = cashData.revealed?.length || 0;
       setVerifiedTokenAmount(verifiedAmount); // Save for use in toast
-      setModalWinAmount(verifiedAmount); // <-- Always show backend-verified amount in modal
-      // If modal is not open, open it now (should already be open, but for safety)
-      if (!modalOpen) setModalOpen(true);
-
       // Reveal all tiles at end state (cash out)
       setGrid(prevGrid => prevGrid.map(tile => ({ ...tile, isRevealed: true, isAnimating: false })));
       
@@ -651,7 +612,7 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
   } // <-- This closes handleCollect
 
   // Main render
-  console.log('DEBUG tries:', tries, 'fid:', fid);
+  
   let mainContent: React.ReactNode;
   if (isUILoading) {
     mainContent = (
@@ -699,7 +660,6 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
             revealedPositions={confirmedRevealedPositions}
             minePositions={minePositions}
             gameOver={gameOver}
-            clickedMineIndex={clickedMineIndex}
             safeRevealedCount={safeRevealedCount}
             playSound={playSound}
             handleTileClick={handleTileClick}
@@ -735,11 +695,11 @@ const [confirmedRevealedPositions, setConfirmedRevealedPositions] = useState<num
       <GameModal
         isOpen={modalOpen}
         onClose={handleModalClose}
-        winAmount={modalWinAmount}
-        isWin={modalIsWin}
         onTryAgain={handleTryAgain}
         grid={grid}
         revealedPositions={confirmedRevealedPositions}
+        isWin={gameWon}
+        winAmount={confirmedRevealedPositions.filter((idx: number) => grid[idx] && !grid[idx].isMine).length}
       />
     </>
   );

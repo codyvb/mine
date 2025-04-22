@@ -18,7 +18,6 @@ export interface TileButtonProps {
   gameKey: number;
   safeRevealedCount: number;
   gameOver: boolean;
-  clickedMineIndex: number | null;
 }
 
 const TileButton: React.FC<TileButtonProps> = ({
@@ -33,7 +32,6 @@ const TileButton: React.FC<TileButtonProps> = ({
   gameKey,
   safeRevealedCount,
   gameOver,
-  clickedMineIndex,
 }) => {
   // Set opacity for different scenarios
   let opacity = 1;

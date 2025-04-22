@@ -16,7 +16,6 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
         >
           ×
         </button>
-        <h1 className="text-2xl flex items-center justify-center mb-6">Gems</h1>
 
         {/* About section */}
         <div className="mb-4">
@@ -25,6 +24,7 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
 
           <ul className="text-sm text-neutral-300 list-disc list-inside space-y-1">
             <li>Collect as many prizes as you can before hitting a bomb.</li>
+            <li>Prizes sent to your wallet.</li>
             <li>10 tries per day.</li>
           </ul>
         </div>
