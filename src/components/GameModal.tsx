@@ -41,11 +41,17 @@ const GameModal: React.FC<GameModalProps> = ({
   // Compose cast handler for share button
   const handleShare = async () => {
     try {
-      await sdk.actions.composeCast({ text: `I just won $fathorse on gems.rip\n\n${getEmojiGrid()}` });
+      await sdk.actions.composeCast({
+        text: `I just won some gems on gems.rip\n\n${getEmojiGrid()}`,
+        embeds: [
+          "https://gems.rip"
+        ]
+      });
     } catch (e) {
       alert('Failed to open Farcaster compose.');
     }
   };
+
 
 
   return (
