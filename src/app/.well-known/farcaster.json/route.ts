@@ -12,7 +12,7 @@ export async function GET() {
       name: "Gems",
       iconUrl: `${appUrl}/icon6.png`,
       homeUrl: appUrl,
-      imageUrl: `${appUrl}/card6.png`,
+      imageUrl: `${appUrl}/card7.png`,
       buttonTitle: "Launch",
       splashImageUrl: `${appUrl}/icon6.png`,
       splashBackgroundColor: "#f7f7f7",
