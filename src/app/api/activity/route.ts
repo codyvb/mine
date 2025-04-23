@@ -13,7 +13,7 @@ export async function GET() {
     .from('games')
     .select('id, fid, started_at, ended_at, won, mine_positions, revealed_positions, users:fid (username, display_name, pfp_url)')
     .order('started_at', { ascending: false })
-    .limit(20);
+    .limit(200);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
