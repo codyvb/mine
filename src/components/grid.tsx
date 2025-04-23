@@ -377,8 +377,9 @@ const fetchTriesLeft = fetchTries;
       
       const data = await res.json();
       
-      if (!res.ok) {
-        setMessage(data.error || "Failed to reveal cell");
+      if (!res.ok || data.error) {
+        setMessage(data.error || "Failed to reveal cell. Please try again.");
+        setPendingRevealIndex(null);
         processingTilesRef.current.delete(index);
         return;
       }
@@ -445,7 +446,7 @@ const fetchTriesLeft = fetchTries;
       
       processingTilesRef.current.delete(index);
     } catch (e) {
-      setMessage("Could not connect to server.");
+      setMessage("Could not connect to server. Please check your connection and try again.");
       setPendingRevealIndex(null);
       processingTilesRef.current.delete(index);
     }
@@ -481,7 +482,7 @@ const fetchTriesLeft = fetchTries;
       setMessage("You cashed out!");
       playSound('cash');
     } catch (e) {
-      setMessage("Could not connect to server.");
+      setMessage("Could not connect to server. Please check your connection and try again.");
     }
   };
   
@@ -607,14 +608,14 @@ const fetchTriesLeft = fetchTries;
       playSound('sent'); // Play transaction confirmation sound
       // All game state is set at collect/cash-out time above
     } catch (e: any) {
-      // Handle error if needed
+      setTokenToast({ loading: false, error: "Could not connect to server. Please check your connection and try again." });
     }
   } // <-- This closes handleCollect
 
   // Main render
   
   let mainContent: React.ReactNode;
-  if (isUILoading) {
+   if (isUILoading) {
     mainContent = (
       <div className="flex flex-col h-full w-full justify-center items-center">
         <div className="flex items-center justify-center px-4 py-2 flex-grow">
@@ -649,6 +650,16 @@ const fetchTriesLeft = fetchTries;
     mainContent = (
       <div className="flex flex-col h-full w-full justify-center items-center">
         <CountdownToReset nextReset={nextReset} />
+      </div>
+    );
+  } else if (typeof message === 'string' && (message.includes('error') || message.includes('Failed') || message.includes('Could not'))) {
+    mainContent = (
+      <div className="flex flex-col h-full w-full justify-center items-center">
+        <div className="text-center text-lg text-red-400 mb-4">{message}</div>
+        <button
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+          onClick={() => window.location.reload()}
+        >Retry</button>
       </div>
     );
   } else {
