@@ -29,6 +29,26 @@ export async function POST(req: Request) {
     .update({ won: true, ended_at })
     .eq('id', gameId);
 
+  // Calculate gems collected in this game
+  const gemsCollected = Array.isArray(game.revealed_positions) ? game.revealed_positions.length : 0;
+
+  // Increment user's total_gems
+  if (gemsCollected > 0) {
+    // Fetch current total_gems
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('total_gems')
+      .eq('fid', fid)
+      .single();
+    if (!userError && user) {
+      const newTotal = (user.total_gems || 0) + gemsCollected;
+      await supabase
+        .from('users')
+        .update({ total_gems: newTotal })
+        .eq('fid', fid);
+    }
+  }
+
   return NextResponse.json({
     gameOver: true,
     won: true,

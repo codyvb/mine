@@ -7,12 +7,13 @@ import sdk from '@farcaster/frame-sdk';
 import Link from 'next/link';
 
 interface NavProps {
-  active?: 'home' | 'leaderboard' | 'prizes';
+  active?: 'home' | 'leaderboard' | 'prizes' | 'activity';
   onOpenLeaderboard?: () => void;
   onOpenPrizes?: () => void;
+  onOpenActivity?: () => void;
 }
 
-const Nav: React.FC<NavProps> = ({ active, onOpenLeaderboard, onOpenPrizes }) => {
+const Nav: React.FC<NavProps> = ({ active, onOpenLeaderboard, onOpenPrizes, onOpenActivity }) => {
   const { pfpUrl, displayName, username, fid, isConnected } = useFarcaster();
   const [showProfileModal, setShowProfileModal] = useState(false);
 
@@ -29,10 +30,17 @@ const Nav: React.FC<NavProps> = ({ active, onOpenLeaderboard, onOpenPrizes }) =>
 
   return (
     <>
-      <div className="fixed pb-10 bottom-0 left-0 w-full z-50 flex flex-row gap-4 px-5 py-4 justify-center items-center">
+      <div className="fixed pb-10 bottom-0 left-0 w-full z-50 flex flex-row gap-2 px-5 py-4 justify-center items-center">
         <button
-          className={`flex-1 px-4 py-4 bg-neutral-700 hover:bg-neutral-800 text-white rounded-md transition-colors text-sm ${active === 'leaderboard' ? 'bg-neutral-800' : ''}`}
+          className={`flex-1 px-4 py-4 bg-neutral-700 hover:bg-neutral-800 text-white rounded-md transition-colors text-sm ${active === 'leaderboard' ? 'bg-purple-700 font-bold' : ''}`}
           onClick={onOpenLeaderboard}
+          type="button"
+        >
+          Leaderboard
+        </button>
+        <button
+          className={`flex-1 px-4 py-4 bg-neutral-700 hover:bg-neutral-800 text-white rounded-md transition-colors text-sm ${active === 'activity' ? 'bg-neutral-800 font-bold' : ''}`}
+          onClick={onOpenActivity}
           type="button"
         >
           Activity
