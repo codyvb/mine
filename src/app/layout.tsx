@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   other: {
     'fc:frame': JSON.stringify({
       version: "next",
-      imageUrl: "https://www.gems.rip/card7.png",
+      imageUrl: "https://www.gems.rip/card8.png",
       aspectRatio: "3:2",
       button: {
         title: "Win Some Gems!",
