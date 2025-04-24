@@ -20,9 +20,8 @@ const PrizesModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpe
         {/* About section */}
         <div className="mb-4">
           <h2 className="text-2xl  mb-2 text-left">Gems is a new daily game on Farcaster. <p></p></h2>
-          <h2 className="text-lg font-semibold mb-4 text-left">How it works <p></p></h2>
+          <h2 className="text-lg mt-2 font-semibold mb-2 text-left">How it works <p></p></h2>
 
-          <div className="text-center text-neutral-400 py-8 min-w-[352px]">No leaderboard data yet.</div>
           <ul className="text-sm text-neutral-300 list-disc list-inside space-y-1">
             <li>Collect as many prizes as you can before hitting a bomb.</li>
             <li>Prizes sent to your wallet.</li>
