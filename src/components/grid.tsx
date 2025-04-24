@@ -505,6 +505,8 @@ const fetchTriesLeft = fetchTries;
     setCanCashOut(false);
     setMessage("");
     setModalOpen(false);
+    setConfirmedRevealedPositions([]); // Immediately hide all revealed tiles
+    setGrid([]); // Clear the board so no tiles are shown
     setTries((t: number | null) => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
     setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
     playSound('please');

@@ -10,6 +10,7 @@ interface Tile {
 }
 
 interface TileGridProps {
+  flameBurst?: boolean;
   grid: Tile[];
   revealedPositions: number[];
   minePositions: number[];
@@ -41,11 +42,35 @@ const TileGrid: React.FC<TileGridProps> = ({
   handleTryAgain,
   isStartingNewRound = false,
   pendingRevealIndex,
+  flameBurst = false,
 }) => {
   return (
     <>
       {/* Grid Section with rounded corners and overflow clipping */}
-      <div className="rounded-lg overflow-hidden bg-[#534427] mx-4 mt-5 flex flex-col items-center justify-center">
+      <div className="relative rounded-lg overflow-hidden bg-[#534427] mx-4 mt-5 flex flex-col items-center justify-center">
+        {/* Fun flame burst overlay */}
+        {flameBurst && (
+          <div className="absolute inset-0 z-30 pointer-events-none animate-flames-burst flex items-end justify-center">
+            <svg width="100%" height="100%" viewBox="0 0 400 400" className="w-full h-full">
+              <g>
+                <ellipse cx="200" cy="390" rx="180" ry="30" fill="#ffb347" opacity="0.7">
+                  <animate attributeName="rx" values="180;220;180" dur="1s" repeatCount="indefinite" />
+                </ellipse>
+                <g>
+                  <path d="M120 380 Q140 320 200 370 Q260 320 280 380 Z" fill="#ff7300" opacity="0.8">
+                    <animate attributeName="d" values="M120 380 Q140 320 200 370 Q260 320 280 380 Z;M110 390 Q160 300 200 370 Q240 300 290 390 Z;M120 380 Q140 320 200 370 Q260 320 280 380 Z" dur="1.2s" repeatCount="indefinite" />
+                  </path>
+                  <path d="M170 380 Q200 300 230 380 Z" fill="#ffd700" opacity="0.7">
+                    <animate attributeName="d" values="M170 380 Q200 300 230 380 Z;M160 380 Q200 310 240 380 Z;M170 380 Q200 300 230 380 Z" dur="1.2s" repeatCount="indefinite" />
+                  </path>
+                  <path d="M190 380 Q200 340 210 380 Z" fill="#fffbe0" opacity="0.6">
+                    <animate attributeName="d" values="M190 380 Q200 340 210 380 Z;M185 380 Q200 350 215 380 Z;M190 380 Q200 340 210 380 Z" dur="1.2s" repeatCount="indefinite" />
+                  </path>
+                </g>
+              </g>
+            </svg>
+          </div>
+        )}
         <div className="flex flex-col items-center justify-center flex-grow w-full">
           <div className="h-[200px] mb-[-100px] w-full bg-center bg-cover" style={{ backgroundImage: "url('/fathorse3.png')" }}></div>
           <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] mx-4 px-4 py-4 aspect-square">
@@ -157,5 +182,8 @@ const TileGrid: React.FC<TileGridProps> = ({
     </>
   );
 };
+
+// Add flame burst animation
+import '../styles/flames.css';
 
 export default TileGrid;
