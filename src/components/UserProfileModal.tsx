@@ -24,7 +24,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const userDisplayName = displayName || username || (fid ? String(fid) : '');
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-800 rounded-lg shadow-lg max-w-md w-full p-5 relative">
+      <div className="bg-neutral-800 rounded-lg shadow-lg max-w-[422px] min-w-[374px] w-full p-5 relative">
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-neutral-400 hover:text-white"

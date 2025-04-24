@@ -50,7 +50,7 @@ const LeaderboardModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
   if (!isOpen) return null;
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-80" onClick={onClose}>
-      <div className="bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-md mx-4 relative flex flex-col h-[80vh] min-h-[400px] max-h-[90vh]" onClick={e => e.stopPropagation()}>
+      <div className="bg-neutral-900 rounded-lg shadow-lg p-6 w-full max-w-[422px] min-w-[374px] mx-4 relative flex flex-col h-[80vh] min-h-[400px] max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <button
           onClick={onClose}
           className="absolute top-1.5 right-1.5 text-white text-lg font-bold p-1 hover:bg-neutral-800 rounded"
@@ -64,12 +64,12 @@ const LeaderboardModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ 
           className="flex-1 min-h-0 overflow-y-auto w-full modal-scroll"
         >
           {loading ? (
-            <div className="text-center text-neutral-300 py-8">Loading...</div>
+            <div className="text-center text-neutral-300 py-8 min-w-[352px]">Loading...</div>
           ) : error ? (
-            <div className="text-center text-red-400 py-8">{error}</div>
+            <div className="text-center text-red-400 py-8 min-w-[352px]">{error}</div>
           ) : (
             users.length === 0 ? (
-              <div className="text-center text-neutral-400 py-8">No leaderboard data yet.</div>
+              <div className="text-center text-neutral-400 py-8 min-w-[352px]">No leaderboard data yet.</div>
             ) : (
               <ol className="w-full">
                 {users.map((user, idx) => (
