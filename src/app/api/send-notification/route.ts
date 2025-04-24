@@ -1,47 +1,30 @@
-import { notificationDetailsSchema } from "@farcaster/frame-sdk";
 import { NextRequest } from "next/server";
-import { z } from "zod";
-import { setUserNotificationDetails } from "~/lib/kv";
-import { sendFrameNotification } from "~/lib/notifs";
-
-const requestSchema = z.object({
-  fid: z.number(),
-  notificationDetails: notificationDetailsSchema,
-});
 
 export async function POST(request: NextRequest) {
-  const requestJson = await request.json();
-  const requestBody = requestSchema.safeParse(requestJson);
+  // Hardcode FID and Frame ID for this test
+  const fid = 746;
+  const frame_id = "2a8bcec6-2ca4-423a-86c2-4bd8e0479164";
+  const NEYNAR_API_KEY = process.env.NEXT_PUBLIC_NEYNAR_API_KEY;
 
-  if (requestBody.success === false) {
-    return Response.json(
-      { success: false, errors: requestBody.error.errors },
-      { status: 400 }
-    );
-  }
+  const payload = {
+    frame_id,
+    recipients: [fid],
+    notification: {
+      title: "Your tries are replenished!",
+      body: "You can now play Gems again. Come back and win!",
+      image: "https://www.gems.rip/card8.png",
+    },
+  };
 
-  await setUserNotificationDetails(
-    requestBody.data.fid,
-    requestBody.data.notificationDetails
-  );
-
-  const sendResult = await sendFrameNotification({
-    fid: requestBody.data.fid,
-    title: "Test notification",
-    body: "Sent at " + new Date().toISOString(),
+  const res = await fetch("https://api.neynar.com/v2/frames/notifications", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api_key": NEYNAR_API_KEY || "",
+    },
+    body: JSON.stringify(payload),
   });
 
-  if (sendResult.state === "error") {
-    return Response.json(
-      { success: false, error: sendResult.error },
-      { status: 500 }
-    );
-  } else if (sendResult.state === "rate_limit") {
-    return Response.json(
-      { success: false, error: "Rate limited" },
-      { status: 429 }
-    );
-  }
-
-  return Response.json({ success: true });
+  const data = await res.json();
+  return Response.json(data, { status: res.ok ? 200 : 500 });
 }

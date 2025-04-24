@@ -12,11 +12,11 @@ export async function GET() {
       name: "Gems",
       iconUrl: `${appUrl}/icon6.png`,
       homeUrl: appUrl,
-      imageUrl: `${appUrl}/card7.png`,
+      imageUrl: `${appUrl}/card8.png`,
       buttonTitle: "Launch",
       splashImageUrl: `${appUrl}/icon6.png`,
       splashBackgroundColor: "#f7f7f7",
-      webhookUrl: `${appUrl}/api/webhook`,
+      webhookUrl: `https://api.neynar.com/f/app/2a8bcec6-2ca4-423a-86c2-4bd8e0479164/event`,
     },
   };
 
