@@ -25,6 +25,7 @@ interface TileGridProps {
   handleTryAgain: () => void;
   isStartingNewRound?: boolean;
   pendingRevealIndex?: number | null;
+  boardTransitioning?: boolean;
 }
 
 const TileGrid: React.FC<TileGridProps> = ({
@@ -43,11 +44,17 @@ const TileGrid: React.FC<TileGridProps> = ({
   isStartingNewRound = false,
   pendingRevealIndex,
   flameBurst = false,
+  boardTransitioning = false,
 }) => {
   return (
     <>
       {/* Grid Section with rounded corners and overflow clipping */}
-      <div className="relative rounded-lg overflow-hidden bg-[#534427] mx-4 mt-5 flex flex-col items-center justify-center">
+      <motion.div
+        className="relative rounded-lg overflow-hidden bg-[#534427] mx-4 mt-5 flex flex-col items-center justify-center"
+        initial={{ opacity: 1, scale: 1 }}
+        animate={{ opacity: boardTransitioning ? 0 : 1, scale: boardTransitioning ? 0.96 : 1 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
         {/* Fun flame burst overlay */}
         {flameBurst && (
           <div className="absolute inset-0 z-30 pointer-events-none animate-flames-burst flex items-end justify-center">
@@ -101,7 +108,7 @@ const TileGrid: React.FC<TileGridProps> = ({
           })}
         </div>
       </div>
-      </div>
+      </motion.div>
 
       {/* Footer Section (Collect/Try Again) */}
       {isStartingNewRound ? (

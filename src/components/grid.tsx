@@ -495,23 +495,31 @@ const fetchTriesLeft = fetchTries;
     // The modal will only open again if the user explicitly collects in the new round
   };
 
+  const [boardTransitioning, setBoardTransitioning] = useState(false);
+
   const handleTryAgain = async () => {
     setIsStartingNewRound(true); // Hide footer buttons immediately
-    gameOverRef.current = false;
-    processingTilesRef.current = new Set();
-    setMineHit(false);
-    setGameOver(false);
-    setGameWon(false);
-    setCanCashOut(false);
-    setMessage("");
-    setModalOpen(false);
-    setConfirmedRevealedPositions([]); // Immediately hide all revealed tiles
-    setGrid([]); // Clear the board so no tiles are shown
-    setTries((t: number | null) => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
-    setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
+    setBoardTransitioning(true); // Start transition out
     playSound('please');
-    await startNewRound(); // If this is async, await it
-    setIsStartingNewRound(false); // Show buttons again when new round is ready
+    // Wait for transition animation (e.g. 400ms)
+    setTimeout(async () => {
+      gameOverRef.current = false;
+      processingTilesRef.current = new Set();
+      setMineHit(false);
+      setGameOver(false);
+      setGameWon(false);
+      setCanCashOut(false);
+      setMessage("");
+      setModalOpen(false);
+      setConfirmedRevealedPositions([]); // Immediately hide all revealed tiles
+      setGrid([]); // Clear the board so no tiles are shown
+      setTries((t: number | null) => Math.max(0, (t ?? 0) - 1)); // Optimistically decrement
+      setGameKey(prevKey => prevKey + 1); // If you use this for remounting TileGrid
+      await startNewRound(); // If this is async, await it
+      setIsStartingNewRound(false); // Show buttons again when new round is ready
+      // Fade back in
+      setTimeout(() => setBoardTransitioning(false), 50); // short delay to trigger fade in
+    }, 400); // match animation duration
   };
 
   // Handle modal close (X button)
@@ -683,6 +691,7 @@ const fetchTriesLeft = fetchTries;
             handleTryAgain={handleTryAgain}
             isStartingNewRound={isStartingNewRound}
             pendingRevealIndex={pendingRevealIndex}
+            boardTransitioning={boardTransitioning}
           />
         </div>
       </div>
