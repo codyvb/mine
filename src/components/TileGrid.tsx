@@ -44,13 +44,12 @@ const TileGrid: React.FC<TileGridProps> = ({
 }) => {
   return (
     <>
-      {/* Header Section */}
-      <div className="flex items-center h-full justify-center py-2">
-        <h1 className="text-2xl text-center">Win some Gems!</h1>
-      </div>
-      {/* Grid Section */}
-      <div className="flex items-center justify-center px-4 py-2 flex-grow">
-        <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] aspect-square">
+      {/* Grid Section with rounded corners and overflow clipping */}
+      <div className="rounded-lg overflow-hidden bg-[#534427] mx-4 mt-5 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center flex-grow w-full">
+          <div className="h-[200px] mb-[-100px] w-full bg-center bg-cover" style={{ backgroundImage: "url('/fathorse3.png')" }}></div>
+          <div key={gameKey} className="grid grid-cols-5 gap-2 w-full max-w-[90vw] mx-4 px-4 py-4 aspect-square">
+
           {grid.map((tile, index) => {
             const isClickedMine = tile.isMine && gameOver; // No distinction needed
             const isOtherMine = false; // No longer used
@@ -77,6 +76,8 @@ const TileGrid: React.FC<TileGridProps> = ({
           })}
         </div>
       </div>
+      </div>
+
       {/* Footer Section (Collect/Try Again) */}
       {isStartingNewRound ? (
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center" aria-hidden="true">
@@ -88,15 +89,20 @@ const TileGrid: React.FC<TileGridProps> = ({
         <div className="px-5 pb-10 mt-2 flex flex-col justify-center">
           <div className="mb-3">
             {mineHit ? (
-              <motion.button
-                className="bg-purple-700 hover:bg-purple-600 text-white py-6 px-6 rounded-lg font-bold transition-colors w-full mx-auto block text-center"
-                onClick={handleTryAgain}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                disabled={tries === 0}
-              >
-                {tries === 0 ? 'No tries left' : `Try Again (${tries} tries left)`}
-              </motion.button>
+              <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
+                <span className="flex-1 py-6 px-4 text-white text-xl  text-center whitespace-nowrap flex items-center justify-center">
+                  {tries === 0 ? 'No tries left' : `${tries} tries remain`}
+                </span>
+                <motion.button
+                  className="flex-[2] py-6 px-6 rounded-lg font-bold transition-colors min-w-0 truncate block text-center bg-purple-700 text-white hover:bg-purple-600"
+                  onClick={handleTryAgain}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={tries === 0}
+                >
+                  Try Again
+                </motion.button>
+              </div>
             ) : (
               safeRevealedCount > 0 ? (
                 <div className="flex flex-row flex-nowrap items-center gap-3 w-full min-w-0">
@@ -135,10 +141,12 @@ const TileGrid: React.FC<TileGridProps> = ({
                   style={{ height: '72px' }}
                   disabled
                 >
-                  <div className="animate-pulse">
+                  <div className="animate-pulse flex flex-col items-center justify-center">
                     <svg height="32" viewBox="0 0 40 40" fill="currentColor" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
                       <path d="M20 6l-12 14h7v10h10V20h7L20 6z" />
                     </svg>
+                    <span className="text-white text-base font-medium mt-2 opacity-80">press a tile to play - {tries === 0 ? 'No tries left' : `${tries} tries remain`}
+                    </span>
                   </div>
                 </button>
               )
