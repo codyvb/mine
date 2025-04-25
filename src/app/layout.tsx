@@ -40,7 +40,7 @@ export const metadata: Metadata = {
         action: {
           type: "launch_frame",
           name: "Gems",
-          url: "https://gems.rip",
+          url: "https://www.gems.rip",
           splashImageUrl: "https://www.gems.rip/icon6.png",
           splashBackgroundColor: "#f7f7f7"
         }
