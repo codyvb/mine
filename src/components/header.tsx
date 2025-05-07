@@ -32,6 +32,15 @@ const Header = ({}: HeaderProps) => {
         setIsLoading(true);
         const context = await sdk.context;
 
+        // Disable native gestures per Farcaster Mini App docs
+        if ((sdk.actions as any).disableNativeGestures) {
+          try {
+            await (sdk.actions as any).disableNativeGestures();
+          } catch (e) {
+            console.warn('Failed to disable native gestures:', e);
+          }
+        }
+
         // Mark the frame as ready
         sdk.actions.ready({});
 
